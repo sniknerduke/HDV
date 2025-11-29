@@ -58,6 +58,14 @@ export interface CreateCoursePayload {
   status?: 'published' | 'draft';
 }
 
+export interface UpdateCoursePayload {
+  code: string;
+  title: string;
+  description?: string;
+  price: number;
+  duration: number;
+}
+
 const STORAGE_KEY = 'courses';
 
 function readStorage(): Course[] {
@@ -72,6 +80,14 @@ function readStorage(): Course[] {
 
 function writeStorage(courses: Course[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
+}
+
+export function getCachedCourses(): Course[] {
+  try {
+    return readStorage();
+  } catch {
+    return [];
+  }
 }
 
 export function persistCoursesSnapshot(courses: Course[]): void {
@@ -91,8 +107,7 @@ const mapBackendCourse = (input: BackendCourse, existing?: Course, extras?: Part
   const priceValueRaw = typeof input.price === 'number' ? input.price : Number(input.price ?? 0);
   const priceValue = Number.isFinite(priceValueRaw) ? priceValueRaw : 0;
   const durationRaw = typeof input.duration === 'number' ? input.duration : Number(input.duration ?? 0);
-  const durationFormatted = extras?.duration
-    ?? (Number.isFinite(durationRaw) && durationRaw > 0 ? formatDuration(durationRaw) : existing?.duration ?? '');
+  const durationFormatted = extras?.duration ?? existing?.duration ?? (Number.isFinite(durationRaw) && durationRaw > 0 ? formatDuration(durationRaw) : '');
 
   return {
     id: input.id,
@@ -171,6 +186,22 @@ export async function getCourses(token: string): Promise<Course[]> {
   return mapped;
 }
 
+export async function fetchCoursesForCatalog(token?: string): Promise<Course[]> {
+  if (token) {
+    try {
+      return await getCourses(token);
+    } catch (error) {
+      console.warn('Không thể tải khóa học từ backend, sử dụng dữ liệu cache.', error);
+    }
+  }
+  const cached = getCachedCourses();
+  if (cached.length > 0) {
+    return cached;
+  }
+  ensureSeedData();
+  return getCachedCourses();
+}
+
 export async function createCourse(payload: CreateCoursePayload, token: string): Promise<Course> {
   const body = {
     code: payload.code,
@@ -199,6 +230,56 @@ export async function createCourse(payload: CreateCoursePayload, token: string):
     students: 0,
   });
   writeStorage(mergeCourses(stored, [mapped]));
+  return mapped;
+}
+
+export async function deleteCourseRemote(courseId: number, token: string): Promise<void> {
+  const response = await fetch(`${COURSE_API_BASE}/api/courses/${courseId}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  await handleApiResponse<void>(response);
+  const stored = readStorage().filter((course) => course.id !== courseId);
+  writeStorage(stored);
+}
+
+export async function updateCourseRemote(
+  courseId: number,
+  payload: UpdateCoursePayload,
+  token: string,
+  extras?: Partial<Course>
+): Promise<Course> {
+  const body = {
+    code: payload.code,
+    title: payload.title,
+    description: payload.description,
+    price: payload.price,
+    duration: payload.duration,
+  };
+  const response = await fetch(`${COURSE_API_BASE}/api/courses/${courseId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  const updated = await handleApiResponse<BackendCourse>(response);
+  const stored = readStorage();
+  const existing = stored.find((course) => course.id === courseId);
+  const mapped = mapBackendCourse(updated, existing, {
+    description: payload.description ?? existing?.description ?? '',
+    category: extras?.category ?? existing?.category ?? DEFAULT_CATEGORY,
+    level: extras?.level ?? existing?.level ?? DEFAULT_LEVEL,
+    status: extras?.status ?? existing?.status ?? DEFAULT_STATUS,
+    students: extras?.students ?? existing?.students ?? 0,
+    price: payload.price,
+    duration: extras?.duration ?? formatDuration(payload.duration),
+  });
+  const merged = mergeCourses(stored, [mapped]);
+  writeStorage(merged);
   return mapped;
 }
 

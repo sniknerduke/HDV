@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { Plus, Edit, Trash2, BookOpen, Clock, DollarSign, Eye, Save, X, PlusCircle, Users } from 'lucide-react';
-import { getCourses, createCourse, Course as SvcCourse, persistCoursesSnapshot } from '../../services/courseService';
+import { getCourses, createCourse, deleteCourseRemote, updateCourseRemote, Course as SvcCourse, persistCoursesSnapshot } from '../../services/courseService';
 import { toast } from 'sonner';
 
 type Course = SvcCourse;
@@ -19,6 +19,7 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
   const [loadError, setLoadError] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -115,26 +116,43 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
 
     setIsSaving(true);
     if (editingCourse) {
-      const updatedCourses: Course[] = courses.map((c): Course => (
-        c.id === editingCourse.id
-          ? {
-              ...c,
-              code: formData.code.trim(),
-              title: formData.title.trim(),
-              description: formData.description.trim(),
-              category: formData.category,
-              level: formData.level,
-              price: Math.round(priceValue),
-              duration: `${Math.round(durationValue)} giờ`,
-              status: formData.status,
-            }
-          : c
-      ));
-      setCourses(updatedCourses);
-      persistCoursesSnapshot(updatedCourses);
-      toast.success('Đã cập nhật khóa học (chưa đồng bộ backend).');
-      setIsDialogOpen(false);
-      setIsSaving(false);
+      try {
+        const updated = await updateCourseRemote(
+          editingCourse.id,
+          {
+            code: formData.code.trim(),
+            title: formData.title.trim(),
+            description: formData.description.trim(),
+            price: Math.round(priceValue),
+            duration: Math.round(durationValue),
+          },
+          authToken,
+          {
+            category: formData.category,
+            level: formData.level,
+            status: formData.status,
+            students: editingCourse.students,
+            duration: `${Math.round(durationValue)} giờ`,
+          }
+        );
+        setCourses(prev => {
+          const next = prev.map((c): Course => (
+            c.id === updated.id
+              ? { ...updated, sections: updated.sections ?? c.sections }
+              : c
+          ));
+          persistCoursesSnapshot(next);
+          return next;
+        });
+        setEditingCourse(null);
+        toast.success('Cập nhật khóa học thành công!');
+        setIsDialogOpen(false);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Không thể cập nhật khóa học';
+        toast.error(message);
+      } finally {
+        setIsSaving(false);
+      }
       return;
     }
     try {
@@ -166,12 +184,26 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
     }
   };
 
-  const handleDeleteCourse = (id: number) => {
-    if (confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
+  const handleDeleteCourse = async (id: number) => {
+    if (!authToken) {
+      toast.error('Thiếu token xác thực. Vui lòng đăng nhập lại.');
+      return;
+    }
+    if (!confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
+      return;
+    }
+    setDeletingId(id);
+    try {
+      await deleteCourseRemote(id, authToken);
       const next = courses.filter(c => c.id !== id);
       setCourses(next);
       persistCoursesSnapshot(next);
       toast.success('Xóa khóa học thành công!');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể xóa khóa học';
+      toast.error(message);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -452,8 +484,10 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteCourse(course.id)}
+                    disabled={deletingId === course.id || isSaving}
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />
+                    {deletingId === course.id ? <span className="ml-1 text-xs">Đang xóa...</span> : null}
                   </Button>
                 </div>
               </div>

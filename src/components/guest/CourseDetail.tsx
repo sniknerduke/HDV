@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Star, Clock, Users, BookOpen, PlayCircle, Award } from 'lucide-react';
 import { toast } from 'sonner';
 
+const fallbackCourseImage = 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=1200&h=630&fit=crop';
+
 const courseDetails = {
   description: 'Khóa học này sẽ giúp bạn nắm vững các kiến thức cơ bản và nâng cao, từ đó có thể tự tin áp dụng vào thực tế. Bạn sẽ được hướng dẫn chi tiết từng bước một cách dễ hiểu và có nhiều bài tập thực hành.',
   whatYouLearn: [
@@ -42,6 +44,12 @@ export default function CourseDetail({ course, onNavigate, userRole = null, onAd
     );
   }
 
+  const priceLabel = typeof course.price === 'number' ? `${course.price.toLocaleString('vi-VN')} VNĐ` : course.price;
+  const ratingLabel = typeof course.rating === 'number' ? course.rating.toFixed(1) : '4.8';
+  const studentsCount = typeof course.students === 'number' ? course.students : 0;
+  const instructorName = course.instructor || 'Đội ngũ EduPlatform';
+  const courseImage = course.image || fallbackCourseImage;
+
   return (
     <div className="bg-gray-50">
       {/* Hero Section */}
@@ -54,21 +62,21 @@ export default function CourseDetail({ course, onNavigate, userRole = null, onAd
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  <span>{course.rating}</span>
-                  <span className="opacity-75">({course.students} đánh giá)</span>
+                  <span>{ratingLabel}</span>
+                  <span className="opacity-75">({studentsCount} đánh giá)</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-5 h-5" />
-                  <span>{course.students} học viên</span>
+                  <span>{studentsCount} học viên</span>
                 </div>
               </div>
-              <p className="opacity-75">Giảng viên: {course.instructor}</p>
+              <p className="opacity-75">Giảng viên: {instructorName}</p>
             </div>
             <div>
               <Card>
-                <img src={course.image} alt={course.title} className="w-full h-48 object-cover rounded-t-lg" />
+                <img src={courseImage} alt={course.title} className="w-full h-48 object-cover rounded-t-lg" />
                 <CardContent className="p-6">
-                  <div className="text-3xl mb-4">{course.price}</div>
+                  <div className="text-3xl mb-4">{priceLabel}</div>
                   <Button className="w-full mb-2">Đăng ký ngay</Button>
                   {/* Secondary action varies by role */}
                   {userRole === 'student' ? (
