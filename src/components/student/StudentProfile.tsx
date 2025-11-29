@@ -59,7 +59,7 @@ export default function StudentProfile() {
         return;
       }
       try {
-        const data = await getUserProfile(storedUser.id, token);
+        const data = await getUserProfile(token);
         setProfileData({
           fullName: data.username ?? '',
           email: data.email ?? '',

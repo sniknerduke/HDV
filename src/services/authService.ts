@@ -81,8 +81,8 @@ export const loginUser = async (payload: LoginPayload) => {
   return handleResponse<AuthResponse>(response);
 };
 
-export const getUserProfile = async (id: number, token: string) => {
-  const response = await fetch(`${API_BASE}/api/users/${id}`, {
+export const getUserProfile = async (token: string) => {
+  const response = await fetch(`${API_BASE}/api/users/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

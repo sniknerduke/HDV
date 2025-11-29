@@ -8,26 +8,50 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { Plus, Edit, Trash2, BookOpen, Clock, DollarSign, Eye, Save, X, PlusCircle, Users } from 'lucide-react';
-import { ensureSeedData, getCourses, Course as SvcCourse } from '../../services/courseService';
+import { getCourses, createCourse, Course as SvcCourse, persistCoursesSnapshot } from '../../services/courseService';
 import { toast } from 'sonner';
 
 type Course = SvcCourse;
 
 export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course: Course) => void }) {
   const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
-    ensureSeedData();
-    getCourses().then(setCourses);
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      setLoadError('Bạn cần đăng nhập để quản lý khóa học.');
+      setLoading(false);
+      toast.error('Bạn cần đăng nhập để quản lý khóa học.');
+      return;
+    }
+    setAuthToken(token);
+    (async () => {
+      try {
+        const data = await getCourses(token);
+        setCourses(data);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Không thể tải danh sách khóa học';
+        setLoadError(message);
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [formData, setFormData] = useState({
+    code: '',
     title: '',
     description: '',
     category: 'Programming',
     level: 'Beginner',
-    price: 0,
+    price: '',
     duration: '',
     status: 'draft' as 'published' | 'draft'
   });
@@ -37,11 +61,12 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
   const handleCreateCourse = () => {
     setEditingCourse(null);
     setFormData({
+      code: '',
       title: '',
       description: '',
       category: 'Programming',
       level: 'Beginner',
-      price: 0,
+      price: '',
       duration: '',
       status: 'draft'
     });
@@ -51,54 +76,137 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
   const handleEditCourse = (course: Course) => {
     setEditingCourse(course);
     setFormData({
+      code: course.code ?? '',
       title: course.title,
       description: course.description,
       category: course.category,
       level: course.level,
-      price: course.price,
-      duration: course.duration,
+      price: course.price.toString(),
+      duration: (course.duration.match(/\d+/)?.[0] ?? '').toString(),
       status: course.status
     });
     setIsDialogOpen(true);
   };
 
-  const handleSaveCourse = () => {
+  const handleSaveCourse = async () => {
+    if (!formData.code.trim()) {
+      toast.error('Vui lòng nhập mã khóa học');
+      return;
+    }
+    if (!formData.title.trim()) {
+      toast.error('Vui lòng nhập tên khóa học');
+      return;
+    }
+    const priceValue = Number(formData.price);
+    if (!Number.isFinite(priceValue) || priceValue <= 0) {
+      toast.error('Giá khóa học phải lớn hơn 0');
+      return;
+    }
+    const durationValue = Number(formData.duration);
+    if (!Number.isFinite(durationValue) || durationValue <= 0) {
+      toast.error('Thời lượng khóa học phải lớn hơn 0');
+      return;
+    }
+
+    if (!authToken) {
+      toast.error('Thiếu token xác thực. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    setIsSaving(true);
     if (editingCourse) {
-      setCourses(courses.map(c => 
-        c.id === editingCourse.id 
-          ? { ...c, ...formData }
+      const updatedCourses: Course[] = courses.map((c): Course => (
+        c.id === editingCourse.id
+          ? {
+              ...c,
+              code: formData.code.trim(),
+              title: formData.title.trim(),
+              description: formData.description.trim(),
+              category: formData.category,
+              level: formData.level,
+              price: Math.round(priceValue),
+              duration: `${Math.round(durationValue)} giờ`,
+              status: formData.status,
+            }
           : c
       ));
-      toast.success('Cập nhật khóa học thành công!');
-    } else {
-      const newCourse: Course = {
-        id: Date.now(),
-        ...formData,
-        students: 0
-      };
-      setCourses([...courses, newCourse]);
-      toast.success('Tạo khóa học thành công!');
+      setCourses(updatedCourses);
+      persistCoursesSnapshot(updatedCourses);
+      toast.success('Đã cập nhật khóa học (chưa đồng bộ backend).');
+      setIsDialogOpen(false);
+      setIsSaving(false);
+      return;
     }
-    setIsDialogOpen(false);
+    try {
+      const created = await createCourse(
+        {
+          code: formData.code.trim(),
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          price: Math.round(priceValue),
+          duration: Math.round(durationValue),
+          category: formData.category,
+          level: formData.level,
+          status: formData.status,
+        },
+        authToken
+      );
+      setCourses(prev => {
+        const next = [...prev, created];
+        persistCoursesSnapshot(next);
+        return next;
+      });
+      toast.success('Tạo khóa học thành công!');
+      setIsDialogOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể tạo khóa học';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDeleteCourse = (id: number) => {
     if (confirm('Bạn có chắc chắn muốn xóa khóa học này?')) {
-      setCourses(courses.filter(c => c.id !== id));
+      const next = courses.filter(c => c.id !== id);
+      setCourses(next);
+      persistCoursesSnapshot(next);
       toast.success('Xóa khóa học thành công!');
     }
   };
 
   const handlePublishCourse = (id: number) => {
-    setCourses(courses.map(c => 
-      c.id === id 
-        ? { ...c, status: c.status === 'published' ? 'draft' : 'published' }
+    const updated: Course[] = courses.map((c): Course => (
+      c.id === id
+        ? { ...c, status: (c.status === 'published' ? 'draft' : 'published') as 'published' | 'draft' }
         : c
     ));
+    setCourses(updated);
+    persistCoursesSnapshot(updated);
     toast.success('Cập nhật trạng thái khóa học thành công!');
   };
 
   // Lesson CRUD moved to TeacherCourseContentManager
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="p-10 text-center text-gray-600">Đang tải danh sách khóa học...</CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="p-10 text-center text-red-600">{loadError}</CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8">
@@ -122,12 +230,22 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
+                <div>
+                  <Label>Mã khóa học</Label>
+                  <Input
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="Ví dụ: REACT-2024"
+                    disabled={isSaving}
+                  />
+                </div>
               <div>
                 <Label>Tên khóa học</Label>
                 <Input
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
                   placeholder="Ví dụ: React từ cơ bản đến nâng cao"
+                    disabled={isSaving}
                 />
               </div>
               <div>
@@ -137,12 +255,13 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   placeholder="Mô tả chi tiết về khóa học..."
+                    disabled={isSaving}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Danh mục</Label>
-                  <Select value={formData.category} onValueChange={(value: string) => setFormData({...formData, category: value})}>
+                  <Select value={formData.category} onValueChange={(value: string) => setFormData({...formData, category: value})} disabled={isSaving}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -156,7 +275,7 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
                 </div>
                 <div>
                   <Label>Cấp độ</Label>
-                  <Select value={formData.level} onValueChange={(value: string) => setFormData({...formData, level: value})}>
+                  <Select value={formData.level} onValueChange={(value: string) => setFormData({...formData, level: value})} disabled={isSaving}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -174,8 +293,9 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
                   <Input
                     type="number"
                     value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: Number(e.target.value)})}
+                    onChange={(e) => setFormData({...formData, price: e.target.value })}
                     placeholder="1500000"
+                    disabled={isSaving}
                   />
                 </div>
                 <div>
@@ -183,13 +303,16 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
                   <Input
                     value={formData.duration}
                     onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                    placeholder="40 giờ"
+                    placeholder="40"
+                    type="number"
+                    min={1}
+                    disabled={isSaving}
                   />
                 </div>
               </div>
               <div>
                 <Label>Trạng thái</Label>
-                <Select value={formData.status} onValueChange={(value: 'published' | 'draft') => setFormData({...formData, status: value})}>
+                <Select value={formData.status} onValueChange={(value: 'published' | 'draft') => setFormData({...formData, status: value})} disabled={isSaving}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -201,11 +324,11 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
                 Hủy
               </Button>
-              <Button onClick={handleSaveCourse}>
-                {editingCourse ? 'Cập nhật' : 'Tạo khóa học'}
+              <Button onClick={handleSaveCourse} disabled={isSaving}>
+                {isSaving ? 'Đang lưu...' : editingCourse ? 'Cập nhật' : 'Tạo khóa học'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -279,6 +402,9 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
                         <Badge variant={course.status === 'published' ? 'default' : 'secondary'}>
                           {course.status === 'published' ? 'Đã xuất bản' : 'Bản nháp'}
                         </Badge>
+                        {course.code ? (
+                          <Badge variant="outline">{course.code}</Badge>
+                        ) : null}
                       </div>
                       <p className="text-gray-600 mb-3">{course.description}</p>
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
@@ -288,7 +414,7 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
-                          {course.duration}
+                          {course.duration ? course.duration : 'Chưa đặt' }
                         </div>
                         <div className="flex items-center gap-1">
                           <DollarSign className="w-4 h-4" />
