@@ -5,6 +5,7 @@ import { Label } from '../ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { FaGoogle, FaFacebook } from 'react-icons/fa';
 import { toast } from 'sonner';
+import { loginUser } from '../../services/authService';
 
 interface LoginProps {
   onLogin: (role: string) => void;
@@ -17,29 +18,41 @@ export default function Login({ onLogin, onNavigate, adminOnly = false }: LoginP
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Simple in-memory credential mapping
-  const credentials: Record<string, { password: string; role: string }> = {
-    'student@example.com': { password: '123', role: 'student' },
-    'teacher@example.com': { password: '123', role: 'teacher' },
-    'admin@example.com': { password: '123', role: 'admin' }, // used only when adminOnly=true
+  const mapRoleToClient = (role?: string) => {
+    switch (role) {
+      case 'ADMIN':
+        return 'admin';
+      case 'STAFF':
+      case 'MANAGER':
+        return 'teacher';
+      default:
+        return 'student';
+    }
   };
 
-  const attemptLogin = () => {
-    const record = credentials[email.trim().toLowerCase()];
-    if (!record) {
-      toast.error('Email không hợp lệ');
-      return;
-    }
-    if (record.password !== password) {
-      toast.error('Mật khẩu sai');
+  const attemptLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      toast.error('Vui lòng nhập email và mật khẩu');
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      onLogin(record.role);
+    try {
+      const { token, user } = await loginUser({ email: email.trim(), password });
+      if (adminOnly && user.role !== 'ADMIN') {
+        toast.error('Tài khoản không có quyền quản trị');
+        return;
+      }
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('auth_user', JSON.stringify(user));
+      const mapped = mapRoleToClient(user.role);
+      onLogin(mapped);
       toast.success('Đăng nhập thành công');
-    }, 400);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể đăng nhập';
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSocialLogin = (provider: 'google' | 'facebook') => {
@@ -96,7 +109,7 @@ export default function Login({ onLogin, onNavigate, adminOnly = false }: LoginP
           <CardDescription>Nhập email & mật khẩu (sample bên dưới)</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); attemptLogin(); }}>
+            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); attemptLogin(); }}>
             <div>
               <Label>Email</Label>
               <Input
@@ -122,12 +135,8 @@ export default function Login({ onLogin, onNavigate, adminOnly = false }: LoginP
             </Button>
           </form>
           <div className="mt-4 space-y-2 text-xs text-gray-600">
-            <p className="font-medium">Sample credentials:</p>
-            <ul className="space-y-1">
-              <li>Học sinh: <code>student@example.com / student123</code></li>
-              <li>Giáo viên: <code>teacher@example.com / teacher123</code></li>
-              <li>Admin (trang /admin): <code>admin@example.com / admin123</code></li>
-            </ul>
+            <p className="font-medium">Lưu ý:</p>
+            <p>Hãy sử dụng tài khoản đã đăng ký và xác thực qua email.</p>
           </div>
           
           <div className="relative my-6 py-2">

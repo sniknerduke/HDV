@@ -3,8 +3,6 @@ import { BookOpen, Home, GraduationCap, Users, Settings, LogOut, Menu, Bell, Sho
 import { Button } from './components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from './components/ui/dropdown-menu';
 import { Popover, PopoverTrigger, PopoverContent } from './components/ui/popover';
-import { Input } from './components/ui/input';
-import { Badge } from './components/ui/badge';
 import { Toaster } from './components/ui/sonner';
 import GuestHome from './components/guest/GuestHome';
 import CourseCatalog from './components/guest/CourseCatalog';
@@ -15,6 +13,7 @@ import Contact from './components/guest/Contact';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
+import VerifyAccount from './components/auth/VerifyAccount';
 import StudentDashboard from './components/student/StudentDashboard';
 import MyCourses from './components/student/MyCourses';
 import CourseContent from './components/student/CourseContent';
@@ -41,6 +40,19 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const showSidebar = user && !['home', 'courses', 'course-detail', 'about', 'contact'].includes(currentPage);
 
+  const mapApiRoleToClient = (role?: string | null) => {
+    switch (role) {
+      case 'ADMIN':
+        return 'admin';
+      case 'STAFF':
+      case 'MANAGER':
+        return 'teacher';
+      case 'USER':
+      default:
+        return role ? 'student' : null;
+    }
+  };
+
   // Simple path <-> page mapping to enable real URLs (e.g., /admin)
   const pageToPath = useMemo(() => ({
     // public
@@ -51,6 +63,7 @@ export default function App() {
     'contact': '/contact',
     'login': '/login',
     'register': '/register',
+    'verify-account': '/verify-account',
     'forgot-password': '/forgot-password',
     // student
     'student-dashboard': '/student',
@@ -108,15 +121,15 @@ export default function App() {
 
   const handleLogin = (role: string) => {
     setUser(role);
-    // if (role === 'student') setCurrentPage('student-dashboard');
-    // if (role === 'teacher') setCurrentPage('teacher-dashboard');
-    // if (role === 'admin') setCurrentPage('admin-dashboard');
-    // After login, always go to Home as requested
+    sessionStorage.removeItem('pending_email');
     navigateTo('home');
   };
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
+    sessionStorage.removeItem('pending_email');
     navigateTo('home');
   };
 
@@ -134,6 +147,21 @@ export default function App() {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('auth_user');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored) as { role?: string | null };
+        const mapped = mapApiRoleToClient(parsed.role);
+        if (mapped) {
+          setUser(mapped);
+        }
+      } catch (error) {
+        console.warn('Không thể đọc thông tin đăng nhập đã lưu', error);
+      }
+    }
   }, []);
 
   const handleCourseSelect = (course: any) => {
@@ -385,7 +413,8 @@ export default function App() {
 
   const renderContent = () => {
     if (currentPage === 'login') return <Login onLogin={handleLogin} onNavigate={navigateTo} />;
-    if (currentPage === 'register') return <Register onNavigate={navigateTo} />;
+    if (currentPage === 'register') return <Register onNavigate={navigateTo} onRegisterSuccess={(_email) => navigateTo('verify-account')} />;
+    if (currentPage === 'verify-account') return <VerifyAccount onNavigate={navigateTo} />;
     if (currentPage === 'forgot-password') return <ForgotPassword onNavigate={navigateTo} />;
     if (currentPage === 'home') return <GuestHome onNavigate={navigateTo} onCourseSelect={handleCourseSelect} />;
     if (currentPage === 'courses') return (

@@ -6,9 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Check, X } from 'lucide-react';
 import { FaGoogle, FaFacebook } from 'react-icons/fa';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { toast } from 'sonner';
+import { registerUser } from '../../services/authService';
 
 interface RegisterProps {
   onNavigate: (page: string) => void;
+  onRegisterSuccess: (email: string) => void;
 }
 
 // Password strength calculation
@@ -34,7 +37,7 @@ const getStrengthText = (strength: number) => {
   return 'Mạnh';
 };
 
-export default function Register({ onNavigate }: RegisterProps) {
+export default function Register({ onNavigate, onRegisterSuccess }: RegisterProps) {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -42,6 +45,7 @@ export default function Register({ onNavigate }: RegisterProps) {
     confirmPassword: '',
     role: 'student'
   });
+  const [loading, setLoading] = useState(false);
 
   const passwordStrength = calculatePasswordStrength(formData.password);
 
@@ -52,11 +56,42 @@ export default function Register({ onNavigate }: RegisterProps) {
     { label: 'Chứa ký tự đặc biệt', met: /[^a-zA-Z0-9]/.test(formData.password) },
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const mapRole = (role: string) => {
+    if (role === 'teacher') return 'STAFF';
+    return 'USER';
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock registration
-    alert('Đăng ký thành công! Vui lòng đăng nhập.');
-    onNavigate('login');
+    if (!formData.fullName.trim()) {
+      toast.error('Vui lòng nhập họ và tên');
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Mật khẩu xác nhận không khớp');
+      return;
+    }
+    setLoading(true);
+    try {
+      await registerUser({
+        username: formData.fullName.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        role: mapRole(formData.role),
+      });
+      sessionStorage.setItem('pending_email', formData.email.trim());
+      toast.success('Đăng ký thành công! Vui lòng kiểm tra email để lấy mã xác thực.');
+      onRegisterSuccess(formData.email.trim());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể đăng ký';
+      if (message.includes('409')) {
+        toast.error('Email đã tồn tại');
+      } else {
+        toast.error(message);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSocialLogin = (provider: 'google' | 'facebook') => {
@@ -146,7 +181,9 @@ export default function Register({ onNavigate }: RegisterProps) {
                 <Label className="text-sm">Giáo viên</Label>
               </RadioGroup>
             </div>
-            <Button type="submit" className="w-full">Đăng ký</Button>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Đang xử lý...' : 'Đăng ký'}
+            </Button>
           </form>
           
           <div className="relative my-4 py-2">

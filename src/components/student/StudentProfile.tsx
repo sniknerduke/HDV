@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -11,18 +11,74 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Progress } from '../ui/progress';
 import { User, Mail, Phone, MapPin, Calendar, BookOpen, Award, Edit, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { getUserProfile } from '../../services/authService';
+
+interface ClientUser {
+  id: number;
+  email: string;
+  username: string;
+  role?: string;
+}
+
+const emptyProfile = {
+  fullName: '',
+  email: '',
+  phone: '',
+  address: '',
+  dateOfBirth: '',
+  bio: '',
+  avatar: '',
+};
 
 export default function StudentProfile() {
   const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    fullName: 'Nguyễn Văn A',
-    email: 'student@example.com',
-    phone: '0123456789',
-    address: 'Hà Nội, Việt Nam',
-    dateOfBirth: '2000-01-01',
-    bio: 'Sinh viên năm 3 chuyên ngành Công nghệ thông tin, đam mê học tập và phát triển kỹ năng lập trình.',
-    avatar: ''
-  });
+  const [profileData, setProfileData] = useState({ ...emptyProfile });
+  const [loading, setLoading] = useState(true);
+
+  const storedUser = useMemo(() => {
+    const raw = localStorage.getItem('auth_user');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as ClientUser;
+    } catch (error) {
+      console.warn('Không thể parse auth_user', error);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!storedUser) {
+        setLoading(false);
+        return;
+      }
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setLoading(false);
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        return;
+      }
+      try {
+        const data = await getUserProfile(storedUser.id, token);
+        setProfileData({
+          fullName: data.username ?? '',
+          email: data.email ?? '',
+          phone: data.phone ?? '',
+          address: data.address ?? '',
+          dateOfBirth: data.dateOfBirth ?? '',
+          bio: data.bio ?? '',
+          avatar: '',
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Không thể tải thông tin người dùng';
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [storedUser]);
 
   const enrolledCourses = [
     { id: 1, name: 'React từ cơ bản đến nâng cao', progress: 75, grade: 8.5 },
@@ -44,6 +100,23 @@ export default function StudentProfile() {
   const handleCancel = () => {
     setIsEditing(false);
   };
+
+  if (loading) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <p className="text-center text-gray-600">Đang tải thông tin hồ sơ...</p>
+      </div>
+    );
+  }
+
+  if (!storedUser) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto text-center space-y-4">
+        <h1>Hồ sơ cá nhân</h1>
+        <p className="text-gray-600">Bạn cần đăng nhập để xem thông tin hồ sơ.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
