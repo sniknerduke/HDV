@@ -1,0 +1,185 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Auth Flow Vertical" id="auth-flow-vertical">
+    <mxGraphModel dx="1290" dy="756" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="groupLeft" value="" style="group;rounded=1;dashed=1;strokeColor=#b0b0b0;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="40" y="40" width="360" height="980" as="geometry" />
+        </mxCell>
+        <mxCell id="bgLeft" value="" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=none;" vertex="1" parent="groupLeft">
+          <mxGeometry width="360" height="980" as="geometry" />
+        </mxCell>
+
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="groupLeft">
+          <mxGeometry x="150" y="30" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="userReq" value="User Request&#10;(Click Link / API Call)" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="80" y="110" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="checkToken" value="FE: Kiểm tra Token&#10;(localStorage)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="80" y="190" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decHasToken" value="Có Token?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="groupLeft">
+          <mxGeometry x="120" y="270" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="toLogin" value="Redirect: Login Page" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="groupLeft">
+          <mxGeometry x="20" y="360" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="attachToken" value="Attach Header:&#10;Authorization: Bearer..." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="groupLeft">
+          <mxGeometry x="180" y="360" width="160" height="50" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="lblResponse" value="Xử Lý Phản Hồi" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="groupLeft">
+          <mxGeometry x="20" y="650" width="100" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="handleRes" value="FE: Nhận Response" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="80" y="700" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decStatus" value="Status Code?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="120" y="780" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="showData" value="Success (200):&#10;Hiển thị Dữ liệu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="groupLeft">
+          <mxGeometry x="20" y="870" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="showErr" value="Error (401/403):&#10;Báo lỗi / Redirect" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="groupLeft">
+          <mxGeometry x="200" y="870" width="140" height="50" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="end" value="End" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="groupLeft">
+          <mxGeometry x="155" y="940" width="40" height="40" as="geometry" />
+        </mxCell>
+
+
+        <mxCell id="groupRight" value="" style="group;rounded=1;dashed=1;strokeColor=#b0b0b0;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="420" y="40" width="360" height="980" as="geometry" />
+        </mxCell>
+        <mxCell id="bgRight" value="" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=none;" vertex="1" parent="groupRight">
+          <mxGeometry width="360" height="980" as="geometry" />
+        </mxCell>
+
+        <mxCell id="securityChain" value="Security Filter Chain" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="groupRight">
+          <mxGeometry x="80" y="110" width="200" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="jwtFilter" value="JwtAuthenticationFilter&#10;(Validate Token)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="80" y="180" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decValid" value="Token Valid?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="120" y="250" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="res401" value="Return 401&#10;Unauthorized" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="groupRight">
+          <mxGeometry x="220" y="320" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decAuth" value="Endpoint Type?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="80" y="340" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="checkRole" value="Check Role (@PreAuthorize)&#10;Admin/Staff/User" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="groupRight">
+          <mxGeometry x="20" y="440" width="180" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decRole" value="Role OK?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="50" y="520" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="res403" value="Return 403&#10;Forbidden" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="groupRight">
+          <mxGeometry x="220" y="525" width="120" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="controller" value="Controller / Service Logic&#10;(Process Request)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="groupRight">
+          <mxGeometry x="80" y="620" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="res200" value="Return 200 OK&#10;(Success Response)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="80" y="700" width="200" height="50" as="geometry" />
+        </mxCell>
+
+
+        <mxCell id="e1" edge="1" parent="groupLeft" source="start" target="userReq"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" edge="1" parent="groupLeft" source="userReq" target="checkToken"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" edge="1" parent="groupLeft" source="checkToken" target="decHasToken"><mxGeometry relative="1" as="geometry"/></mxCell>
+        
+        <mxCell id="eNoToken" value="No" edge="1" parent="groupLeft" source="decHasToken" target="toLogin"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="90" y="300"/></Array></mxGeometry></mxCell>
+        <mxCell id="eYesToken" value="Yes" edge="1" parent="groupLeft" source="decHasToken" target="attachToken"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="260" y="300"/></Array></mxGeometry></mxCell>
+
+        <mxCell id="eRes1" edge="1" parent="groupLeft" source="handleRes" target="decStatus"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eRes2" value="200 OK" edge="1" parent="groupLeft" source="decStatus" target="showData"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="90" y="810"/></Array></mxGeometry></mxCell>
+        <mxCell id="eRes3" value="Error" edge="1" parent="groupLeft" source="decStatus" target="showErr"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="270" y="810"/></Array></mxGeometry></mxCell>
+        
+        <mxCell id="eEnd1" edge="1" parent="groupLeft" source="showData" target="end"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eEnd2" edge="1" parent="groupLeft" source="showErr" target="end"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+
+        <mxCell id="eReq" value="HTTP Request" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;entryX=0;entryY=0.5;strokeWidth=2;fillColor=#dae8fc;strokeColor=#6c8ebf;" edge="1" parent="1" source="attachToken" target="securityChain">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="425" />
+              <mxPoint x="280" y="440" />
+              <mxPoint x="380" y="440" />
+              <mxPoint x="380" y="170" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="eB1" edge="1" parent="groupRight" source="securityChain" target="jwtFilter"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eB2" edge="1" parent="groupRight" source="jwtFilter" target="decValid"><mxGeometry relative="1" as="geometry"/></mxCell>
+        
+        <mxCell id="eInv" value="No" edge="1" parent="groupRight" source="decValid" target="res401"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="280" y="280"/></Array></mxGeometry></mxCell>
+        
+        <mxCell id="eVal" value="Yes" edge="1" parent="groupRight" source="decValid" target="decAuth"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="140" y="320"/></Array></mxGeometry></mxCell>
+
+        <mxCell id="eProt" value="Protected" edge="1" parent="groupRight" source="decAuth" target="checkRole"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="110" y="420"/></Array></mxGeometry></mxCell>
+        <mxCell id="ePub" value="Public" edge="1" parent="groupRight" source="decAuth" target="controller"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="340" y="370"/><mxPoint x="340" y="600"/><mxPoint x="180" y="600"/></Array></mxGeometry></mxCell>
+
+        <mxCell id="eRoleCheck" edge="1" parent="groupRight" source="checkRole" target="decRole"><mxGeometry relative="1" as="geometry"/></mxCell>
+        
+        <mxCell id="eRoleNo" value="No" edge="1" parent="groupRight" source="decRole" target="res403"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="280" y="550"/></Array></mxGeometry></mxCell>
+        <mxCell id="eRoleYes" value="Yes" edge="1" parent="groupRight" source="decRole" target="controller"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="110" y="600"/><mxPoint x="180" y="600"/></Array></mxGeometry></mxCell>
+
+        <mxCell id="eContr" edge="1" parent="groupRight" source="controller" target="res200"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="eRet200" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;entryX=1;entryY=0.5;strokeWidth=2;fillColor=#d5e8d4;strokeColor=#82b366;" edge="1" parent="1" source="res200" target="handleRes">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="765" />
+              <mxPoint x="380" y="765" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="eRet401" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;entryX=1;entryY=0.5;dashed=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="res401" target="handleRes">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="780" y="385" />
+              <mxPoint x="780" y="765" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="eRet403" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;entryX=1;entryY=0.5;dashed=1;" edge="1" parent="1" source="res403" target="handleRes">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="590" />
+              <mxPoint x="750" y="765" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

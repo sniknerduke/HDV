@@ -47,7 +47,7 @@ public class UserService {
         return userRepo.existsByEmail(email);
     }
 
-    @PreAuthorize("hasRole('USER')")
+    // @PreAuthorize("hasRole('USER')")
     public User registerUser(User user) {
         // 1. Đánh dấu tài khoản chưa kích hoạt
         user.setEnabled(false);
@@ -69,7 +69,7 @@ public class UserService {
     }
 
 
-    @PreAuthorize("hasRole('USER')")
+    // @PreAuthorize("hasRole('USER')")
     @Transactional
     //@PostMapping("/verify-otp")
     public boolean verifyOtp(@RequestParam String email, @RequestParam String code) {

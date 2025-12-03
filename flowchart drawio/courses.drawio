@@ -1,0 +1,192 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Course Management Vertical" id="course-mgmt-vertical">
+    <mxGraphModel dx="1290" dy="756" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="groupLeft" value="DANH SÁCH &amp; XÓA" style="group;fontStyle=1;fontSize=14;verticalAlign=top;align=left;spacingLeft=10;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="40" y="40" width="340" height="880" as="geometry" />
+        </mxCell>
+        <mxCell id="bgLeft" value="" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#b0b0b0;" vertex="1" parent="groupLeft">
+          <mxGeometry width="340" height="880" as="geometry" />
+        </mxCell>
+
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="groupLeft">
+          <mxGeometry x="140" y="40" width="60" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="feGetCourses" value="FE: getCourses()&#10;GET /api/courses" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="70" y="130" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="beReturnList" value="BE: Trả danh sách Course" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="groupLeft">
+          <mxGeometry x="60" y="210" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="feShowList" value="FE: Hiển thị List Course" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="70" y="290" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decAction" value="Chọn Hành Động?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1" vertex="1" parent="groupLeft">
+          <mxGeometry x="90" y="380" width="160" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lblView" value="Xem CT" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="groupLeft">
+          <mxGeometry x="20" y="450" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="feGetDetail" value="FE: getCourseDetail(id)" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="20" y="520" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="feShowDetail" value="Hiển thị:&#10;Sections, Lessons..." style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="10" y="600" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lblDelete" value="Xóa" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="groupLeft">
+          <mxGeometry x="220" y="450" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="ioConfirmDelete" value="Confirm Delete?" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="groupLeft">
+          <mxGeometry x="180" y="520" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="feCallDelete" value="API: DELETE /courses/{id}" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="170" y="600" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="feRemoveCache" value="FE: Xóa khỏi Cache/UI" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="170" y="680" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decContinue" value="Tiếp tục?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="groupLeft">
+          <mxGeometry x="110" y="760" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;fillColor=#60a917;fontColor=#ffffff;strokeColor=#2D7600;" vertex="1" parent="groupLeft">
+          <mxGeometry x="145" y="850" width="50" height="50" as="geometry" />
+        </mxCell>
+
+
+        <mxCell id="groupRight" value="TẠO MỚI &amp; CHỈNH SỬA" style="group;fontStyle=1;fontSize=14;verticalAlign=top;align=left;spacingLeft=10;" vertex="1" connectable="0" parent="1">
+          <mxGeometry x="420" y="40" width="340" height="880" as="geometry" />
+        </mxCell>
+        <mxCell id="bgRight" value="" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=none;strokeColor=#b0b0b0;" vertex="1" parent="groupRight">
+          <mxGeometry width="340" height="880" as="geometry" />
+        </mxCell>
+
+        <mxCell id="lblCreate" value="Tạo Mới" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="groupRight">
+          <mxGeometry x="10" y="40" width="80" height="30" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="inputCreate" value="Nhập Form Tạo Mới&#10;(Code, Title, Price...)" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="70" y="80" width="200" height="50" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="validateCreate" value="FE Validate Form" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="70" y="150" width="200" height="40" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="decValidC" value="Hợp lệ?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="120" y="210" width="100" height="50" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="apiCreate" value="POST /api/courses/create&#10;(BE Save DB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="groupRight">
+          <mxGeometry x="70" y="290" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cacheCreate" value="FE: Update List &amp; Cache" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="70" y="360" width="200" height="50" as="geometry" />
+        </mxCell>
+
+
+        <mxCell id="lblEdit" value="Chỉnh Sửa" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=1" vertex="1" parent="groupRight">
+          <mxGeometry x="10" y="450" width="80" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="selectEdit" value="Chọn Course &amp; Pre-fill Form" style="shape=parallelogram;perimeter=parallelogramPerimeter;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="70" y="490" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="inputEdit" value="Sửa thông tin &amp; Validate" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="70" y="560" width="200" height="40" as="geometry" />
+        </mxCell>
+
+        <mxCell id="decValidE" value="Hợp lệ?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="120" y="620" width="100" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="apiEdit" value="PUT /api/courses/{id}&#10;(BE Update DB)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="groupRight">
+          <mxGeometry x="70" y="690" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="cacheEdit" value="FE: Merge Cache Local" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="groupRight">
+          <mxGeometry x="70" y="760" width="200" height="50" as="geometry" />
+        </mxCell>
+
+
+        <mxCell id="e1" edge="1" parent="groupLeft" source="start" target="feGetCourses"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" edge="1" parent="groupLeft" source="feGetCourses" target="beReturnList"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" edge="1" parent="groupLeft" source="beReturnList" target="feShowList"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" edge="1" parent="groupLeft" source="feShowList" target="decAction"><mxGeometry relative="1" as="geometry"/></mxCell>
+        
+        <mxCell id="eView" edge="1" parent="groupLeft" source="decAction" target="feGetDetail"><mxGeometry relative="1" as="geometry"><mxPoint x="90" y="450" as="targetPoint"/><Array as="points"><mxPoint x="90" y="450"/></Array></mxGeometry></mxCell>
+        <mxCell id="e5" edge="1" parent="groupLeft" source="feGetDetail" target="feShowDetail"><mxGeometry relative="1" as="geometry"/></mxCell>
+        
+        <mxCell id="eDel" edge="1" parent="groupLeft" source="decAction" target="ioConfirmDelete"><mxGeometry relative="1" as="geometry"><mxPoint x="250" y="450" as="targetPoint"/><Array as="points"><mxPoint x="250" y="450"/></Array></mxGeometry></mxCell>
+        <mxCell id="e6" edge="1" parent="groupLeft" source="ioConfirmDelete" target="feCallDelete"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" edge="1" parent="groupLeft" source="feCallDelete" target="feRemoveCache"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="eLoop1" edge="1" parent="groupLeft" source="feShowDetail" target="decContinue"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="90" y="790"/></Array></mxGeometry></mxCell>
+        <mxCell id="eLoop2" edge="1" parent="groupLeft" source="feRemoveCache" target="decContinue"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="250" y="790"/></Array></mxGeometry></mxCell>
+        <mxCell id="eLoop3" value="Yes" edge="1" parent="groupLeft" source="decContinue" target="feShowList"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="40" y="790"/><mxPoint x="40" y="315"/></Array></mxGeometry></mxCell>
+        <mxCell id="eEnd" value="No" edge="1" parent="groupLeft" source="decContinue" target="end"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="eToCreate" value="Tạo Mới" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;entryX=0;entryY=0.5;strokeWidth=2;fillColor=#dae8fc;strokeColor=#6c8ebf;" edge="1" parent="1" source="decAction" target="inputCreate">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="430" />
+              <mxPoint x="380" y="145" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="eToEdit" value="Sửa" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;entryX=0;entryY=0.5;strokeWidth=2;fillColor=#dae8fc;strokeColor=#6c8ebf;" edge="1" parent="1" source="decAction" target="selectEdit">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="430" />
+              <mxPoint x="380" y="555" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="eRC1" edge="1" parent="groupRight" source="inputCreate" target="validateCreate"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eRC2" edge="1" parent="groupRight" source="validateCreate" target="decValidC"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eRC3" value="Yes" edge="1" parent="groupRight" source="decValidC" target="apiCreate"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eRC4" value="No" edge="1" parent="groupRight" source="decValidC" target="inputCreate"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="290" y="235"/><mxPoint x="290" y="105"/></Array></mxGeometry></mxCell>
+        <mxCell id="eRC5" edge="1" parent="groupRight" source="apiCreate" target="cacheCreate"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="eRE1" edge="1" parent="groupRight" source="selectEdit" target="inputEdit"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eRE2" edge="1" parent="groupRight" source="inputEdit" target="decValidE"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eRE3" value="Yes" edge="1" parent="groupRight" source="decValidE" target="apiEdit"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="eRE4" value="No" edge="1" parent="groupRight" source="decValidE" target="inputEdit"><mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="290" y="645"/><mxPoint x="290" y="580"/></Array></mxGeometry></mxCell>
+        <mxCell id="eRE5" edge="1" parent="groupRight" source="apiEdit" target="cacheEdit"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <mxCell id="eRetCreate" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;entryX=1;entryY=0.5;dashed=1;" edge="1" parent="1" source="cacheCreate" target="decContinue">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="780" y="425" />
+              <mxPoint x="780" y="800" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="eRetEdit" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;entryX=1;entryY=0.5;dashed=1;" edge="1" parent="1" source="cacheEdit" target="decContinue">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590" y="840" />
+              <mxPoint x="400" y="840" />
+              <mxPoint x="400" y="800" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

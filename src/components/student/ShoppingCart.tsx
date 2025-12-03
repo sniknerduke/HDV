@@ -64,7 +64,7 @@ export default function ShoppingCart({ onNavigate }: ShoppingCartProps) {
             <Card key={item.id}>
               <CardContent className="p-4">
                 <div className="flex gap-4">
-                  <img 
+                  <img                          
                     src={item.image} 
                     alt={item.title}
                     className="w-32 h-20 object-cover rounded"

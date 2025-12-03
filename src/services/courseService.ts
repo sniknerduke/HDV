@@ -1,18 +1,15 @@
-// Service layer for courses & lessons with localStorage backing
-// Designed so that later you can swap implementations to real backend API
-// by replacing fetchLocal or adding HTTP calls.
+
 
 export interface Lesson {
   id: number;
   title: string;
-  duration?: string; // optional when using video
+  duration?: string; 
   type?: 'video' | 'text' | 'quiz';
   description?: string;
-  // video fields (frontend-only until backend is ready)
-  videoUrl?: string; // URL returned by backend (future)
-  fileName?: string; // local chosen file name (for display only)
+  videoUrl?: string; 
+  fileName?: string; 
   mimeType?: string;
-  size?: number; // bytes
+  size?: number; 
 }
 
 export interface Section {
@@ -283,7 +280,7 @@ export async function updateCourseRemote(
   return mapped;
 }
 
-// Seed defaults if missing
+// data demo nếu không có dữ liệu trong db
 export function ensureSeedData() {
   const existing = readStorage();
   if (existing.length === 0) {
@@ -377,7 +374,7 @@ export async function getCourseById(courseId: number): Promise<Course | null> {
   return readStorage().find(c => c.id === courseId) || null;
 }
 
-// Section CRUD
+// Thêm các thể loại , section cho khóa học , chưa hoàn thiện
 export async function addSection(courseId: number, section: Omit<Section, 'id' | 'lessons'> & { lessons?: Lesson[] }): Promise<Section | null> {
   const courses = readStorage();
   const course = courses.find(c => c.id === courseId);
@@ -417,7 +414,7 @@ export async function reorderSections(courseId: number, fromIndex: number, toInd
   writeStorage(courses);
 }
 
-// Lesson CRUD within a section
+// thêm bài học các thứ , chưa hoàn thiện
 export async function addLesson(courseId: number, sectionId: number, lesson: Omit<Lesson, 'id'>): Promise<Lesson | null> {
   const courses = readStorage();
   const course = courses.find(c => c.id === courseId);
@@ -464,7 +461,3 @@ export async function reorderLessons(courseId: number, sectionId: number, fromIn
   section.lessons = arr;
   writeStorage(courses);
 }
-
-// For future backend integration:
-// Replace readStorage/writeStorage with fetch(`${API_BASE}/courses`) etc.
-// Keep same function signatures so UI components stay unchanged.
