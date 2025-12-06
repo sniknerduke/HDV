@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.RestTemplate;
 
-//@FeignClient(name = "lesson-service", url = "http://localhost:8082")
+//@FeignClient(name = "courses-service", url = "http://localhost:8082")
 //public interface CourseClient {
 @Service
 public class CourseClient {

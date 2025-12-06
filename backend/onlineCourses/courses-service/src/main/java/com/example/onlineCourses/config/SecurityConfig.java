@@ -30,11 +30,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable())
-                // CORS handled at gateway to avoid duplicate Access-Control-Allow-Origin
-                .cors(cors -> cors.disable())
+                .cors(cors -> {}) // bật CORS
                 .authorizeHttpRequests(auth -> auth
                                 // Public endpoints
-                                .requestMatchers("/api/lessons/id/{id}","/api/users/register", "/api/users/verify-otp", "/api/users/login").permitAll()
+                                .requestMatchers("/api/courses/id/{id}","/api/users/register", "/api/users/verify-otp", "/api/users/login").permitAll()
 //                        .requestMatchers("/api/courses/public/**").permitAll()
 //
 //                        // User endpoints
@@ -93,6 +92,19 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+    // Cấu hình CORS cho phép React (localhost:3000) gọi API
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:5173"));
+        configuration.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
 

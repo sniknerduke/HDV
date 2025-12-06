@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -13,23 +13,49 @@ import {
   Section,
   Lesson,
   ensureSeedData,
-  getCourseById,
-  addSection,
+} from '../../services/courseService';
+import {
+  fetchCourseStructure,
+  createSection,
   updateSection,
   deleteSection,
   reorderSections,
-  addLesson,
+  createLesson,
   updateLesson,
   deleteLesson,
   reorderLessons,
-} from '../../services/courseService';
+  SectionDto,
+  LessonDto,
+  LessonPayload,
+} from '../../services/lessonService';
 
 export default function TeacherCourseContentManager({ course, onNavigate }: { course: Course | null; onNavigate: (p: string) => void }) {
   const [courseId, setCourseId] = useState<number | null>(course?.id ?? null);
   const [data, setData] = useState<Course | null>(course);
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  const mapLesson = (l: LessonDto): Lesson => ({
+    id: l.id,
+    title: l.title,
+    type: l.type === 'video' || l.type === 'text' || l.type === 'quiz' ? l.type : undefined,
+    fileName: l.fileName,
+    mimeType: l.mimeType,
+    size: l.size,
+    videoUrl: l.videoUrl,
+  });
+
+  const mapSections = (sections: SectionDto[]): Section[] =>
+    sections.map((s) => ({
+      id: s.id,
+      title: s.title,
+      description: s.description,
+      lessons: (s.lessons ?? []).map(mapLesson),
+    }));
 
   useEffect(() => {
     ensureSeedData();
+    const token = localStorage.getItem('auth_token');
+    if (token) setAuthToken(token);
     if (course?.id) {
       setCourseId(course.id);
       localStorage.setItem('last_course_id', String(course.id));
@@ -40,10 +66,22 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
   }, [course]);
 
   useEffect(() => {
-    if (courseId != null) {
-      getCourseById(courseId).then(setData);
-    }
-  }, [courseId]);
+    const load = async () => {
+      if (courseId == null || !authToken) return;
+      try {
+        const sectionsDto = await fetchCourseStructure(courseId, authToken);
+        setData((prev) => ({
+          ...(prev ?? course ?? { id: courseId, title: '', description: '', category: '', level: '', price: 0, duration: '', students: 0, status: 'draft' as const }),
+          sections: mapSections(sectionsDto),
+        }));
+      } catch (err) {
+        console.error('Load structure failed', err);
+        const message = err instanceof Error ? err.message : 'Không tải được nội dung. Vui lòng thử lại.';
+        toast.error(message);
+      }
+    };
+    load();
+  }, [courseId, authToken, course]);
 
   const [sectionDialogOpen, setSectionDialogOpen] = useState(false);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
@@ -75,38 +113,45 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
   };
 
   const submitSection = async () => {
-    if (!data || courseId == null) return;
+    if (!authToken) { toast.error('Thiếu token, vui lòng đăng nhập lại.'); return; }
+    if (!data || courseId == null) { toast.error('Không xác định được khóa học.'); return; }
     if (!sectionTitle.trim()) { setSectionError('Tiêu đề chương không được để trống.'); return; }
     try {
       if (editingSection) {
-        await updateSection(courseId, editingSection.id, { title: sectionTitle.trim(), description: sectionDesc.trim() || undefined });
+        await updateSection(courseId, editingSection.id, { title: sectionTitle.trim(), description: sectionDesc.trim() || undefined }, authToken);
         toast.success('Đã cập nhật chương');
       } else {
-        await addSection(courseId, { title: sectionTitle.trim(), description: sectionDesc.trim() || undefined });
+        await createSection(courseId, { title: sectionTitle.trim(), description: sectionDesc.trim() || undefined }, authToken);
         toast.success('Đã thêm chương mới');
       }
       setSectionDialogOpen(false);
       setEditingSection(null);
-      setData(await getCourseById(courseId));
-    } catch {
-      toast.error('Mất kết nối. Vui lòng thử lại.');
+      const sectionsDto = await fetchCourseStructure(courseId, authToken);
+      setData((prev) => (prev ? { ...prev, sections: mapSections(sectionsDto) } : prev));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Mất kết nối. Vui lòng thử lại.';
+      toast.error(message);
     }
   };
 
   const confirmDeleteSection = async (s: Section) => {
-    if (courseId == null) return;
+    if (!authToken) { toast.error('Thiếu token, vui lòng đăng nhập lại.'); return; }
+    if (courseId == null) { toast.error('Không xác định được khóa học.'); return; }
     if (!confirm(`Xóa chương “${s.title}”?`)) return;
-    await deleteSection(courseId, s.id);
-    setData(await getCourseById(courseId));
+    await deleteSection(courseId, s.id, authToken);
+    const sectionsDto = await fetchCourseStructure(courseId, authToken);
+    setData((prev) => (prev ? { ...prev, sections: mapSections(sectionsDto) } : prev));
     toast.success('Đã xóa chương');
   };
 
   const moveSection = async (index: number, dir: -1 | 1) => {
-    if (!data || courseId == null || !data.sections) return;
+    if (!authToken) { toast.error('Thiếu token, vui lòng đăng nhập lại.'); return; }
+    if (!data || courseId == null || !data.sections) { toast.error('Không xác định được khóa học.'); return; }
     const to = index + dir;
     if (to < 0 || to >= data.sections.length) return;
-    await reorderSections(courseId, index, to);
-    setData(await getCourseById(courseId));
+    await reorderSections(courseId, { fromIndex: index, toIndex: to }, authToken);
+    const sectionsDto = await fetchCourseStructure(courseId, authToken);
+    setData((prev) => (prev ? { ...prev, sections: mapSections(sectionsDto) } : prev));
   };
 
   const beginAddLesson = (s: Section) => {
@@ -128,44 +173,49 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
   };
 
   const submitLesson = async () => {
-    if (courseId == null || !contextSection) return;
+    if (!authToken) { toast.error('Thiếu token, vui lòng đăng nhập lại.'); return; }
+    if (courseId == null || !contextSection) { toast.error('Không xác định được khóa học/chương.'); return; }
     if (!lessonTitle.trim()) { setLessonError('Tiêu đề bài học không được để trống.'); return; }
     try {
       if (editingLesson) {
-        const patch: Partial<Lesson> = { title: lessonTitle.trim() };
+        const patch: LessonPayload = { title: lessonTitle.trim() };
         if (lessonFile) {
           patch.fileName = lessonFile.name;
           patch.mimeType = lessonFile.type;
           patch.size = lessonFile.size;
           patch.type = 'video';
         }
-        await updateLesson(courseId, contextSection.id, editingLesson.id, patch);
+        await updateLesson(courseId, contextSection.id, editingLesson.id, patch, authToken);
         toast.success('Đã cập nhật bài học');
       } else {
-        const payload: Omit<Lesson, 'id'> = {
+        const payload: LessonPayload = {
           title: lessonTitle.trim(),
           type: lessonFile ? 'video' : undefined,
           fileName: lessonFile?.name,
           mimeType: lessonFile?.type,
           size: lessonFile?.size,
         };
-        await addLesson(courseId, contextSection.id, payload);
+        await createLesson(courseId, contextSection.id, payload, authToken);
         toast.success('Đã thêm bài học');
       }
       setLessonDialogOpen(false);
       setEditingLesson(null);
       setContextSection(null);
-      setData(await getCourseById(courseId));
-    } catch {
-      toast.error('Mất kết nối. Vui lòng thử lại.');
+      const sectionsDto = await fetchCourseStructure(courseId, authToken);
+      setData((prev) => (prev ? { ...prev, sections: mapSections(sectionsDto) } : prev));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Mất kết nối. Vui lòng thử lại.';
+      toast.error(message);
     }
   };
 
   const confirmDeleteLesson = async (s: Section, l: Lesson) => {
-    if (courseId == null) return;
+    if (!authToken) { toast.error('Thiếu token, vui lòng đăng nhập lại.'); return; }
+    if (courseId == null) { toast.error('Không xác định được khóa học.'); return; }
     if (!confirm(`Xóa bài học “${l.title}”?`)) return;
-    await deleteLesson(courseId, s.id, l.id);
-    setData(await getCourseById(courseId));
+    await deleteLesson(courseId, s.id, l.id, authToken);
+    const sectionsDto = await fetchCourseStructure(courseId, authToken);
+    setData((prev) => (prev ? { ...prev, sections: mapSections(sectionsDto) } : prev));
     toast.success('Đã xóa bài học');
   };
 
@@ -175,21 +225,25 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
 
   const onSectionDragStart = (index: number) => setDragSectionIndex(index);
   const onSectionDrop = async (toIndex: number) => {
-    if (dragSectionIndex == null || courseId == null) return;
-    await reorderSections(courseId, dragSectionIndex, toIndex);
+    if (!authToken) { toast.error('Thiếu token, vui lòng đăng nhập lại.'); return; }
+    if (dragSectionIndex == null || courseId == null) { setDragSectionIndex(null); return; }
+    await reorderSections(courseId, { fromIndex: dragSectionIndex, toIndex }, authToken);
     setDragSectionIndex(null);
-    setData(await getCourseById(courseId));
+    const sectionsDto = await fetchCourseStructure(courseId, authToken);
+    setData((prev) => (prev ? { ...prev, sections: mapSections(sectionsDto) } : prev));
   };
 
   const onLessonDragStart = (sectionIndex: number, lessonIndex: number) => setDragLessonCtx({ sectionIndex, lessonIndex });
   const onLessonDrop = async (sectionIndex: number, toIndex: number) => {
+    if (!authToken) { toast.error('Thiếu token, vui lòng đăng nhập lại.'); return; }
     if (!dragLessonCtx || courseId == null) return;
     if (dragLessonCtx.sectionIndex !== sectionIndex) { setDragLessonCtx(null); return; }
     const section = data?.sections?.[sectionIndex];
     if (!section) return;
-    await reorderLessons(courseId, section.id, dragLessonCtx.lessonIndex, toIndex);
+    await reorderLessons(courseId, section.id, { fromIndex: dragLessonCtx.lessonIndex, toIndex }, authToken);
     setDragLessonCtx(null);
-    setData(await getCourseById(courseId));
+    const sectionsDto = await fetchCourseStructure(courseId, authToken);
+    setData((prev) => (prev ? { ...prev, sections: mapSections(sectionsDto) } : prev));
   };
 
   if (!data) {

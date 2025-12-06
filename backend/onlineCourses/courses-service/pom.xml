@@ -10,10 +10,10 @@
         <relativePath/>
     </parent>
 
-    <artifactId>lesson-service</artifactId>
-    <name>lesson-service</name>
+    <artifactId>courses-service</artifactId>
+    <name>courses-service</name>
     <version>0.0.1-SNAPSHOT</version>
-    <description>Service quản lý bài học (lessons)</description>
+    <description>Service quản lý bài học</description>
 
     <properties>
         <java.version>17</java.version>
