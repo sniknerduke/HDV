@@ -11,6 +11,28 @@ import { Textarea } from '../ui/textarea'
 import { Search, Plus, Pencil, Trash2, CheckCircle2, XCircle, BookOpen, Users, DollarSign } from 'lucide-react'
 import { toast } from 'sonner'
 import { Course as SvcCourse, createCourse, deleteCourseRemote, getCourses, persistCoursesSnapshot, updateCourseRemote } from '../../services/courseService'
+import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend as ChartLegend, CategoryScale, LinearScale, BarElement, type ChartOptions } from 'chart.js'
+import { Pie, Bar } from 'react-chartjs-2'
+
+ChartJS.register(ArcElement, ChartTooltip, ChartLegend, CategoryScale, LinearScale, BarElement)
+
+const chartPalette = ['#0ea5e9', '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#22c55e', '#cbd5e1']
+const pieOptions: ChartOptions<'pie'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
+}
+
+const horizontalBarOptions: ChartOptions<'bar'> = {
+  responsive: true,
+  maintainAspectRatio: false,
+  indexAxis: 'y',
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { beginAtZero: true, ticks: { precision: 0 } },
+    y: { ticks: { autoSkip: false } },
+  },
+}
 
 type Course = SvcCourse
 type StatusFilter = 'all' | 'draft' | 'published'
@@ -30,10 +52,12 @@ export default function CourseManagement({ onOpenCourse }: Props) {
   const [category, setCategory] = useState<'all' | string>('all')
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isStatsOpen, setIsStatsOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<Course | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [publishingId, setPublishingId] = useState<number | null>(null)
+  const [statsChartKey, setStatsChartKey] = useState(0)
 
   const [formData, setFormData] = useState({
     code: '',
@@ -69,6 +93,12 @@ export default function CourseManagement({ onOpenCourse }: Props) {
     })()
   }, [])
 
+  useEffect(() => {
+    if (!isStatsOpen) return
+    const id = requestAnimationFrame(() => setStatsChartKey(prev => prev + 1))
+    return () => cancelAnimationFrame(id)
+  }, [isStatsOpen])
+
   const categories = useMemo(() => {
     const unique = new Set<string>()
     courses.forEach(course => {
@@ -94,6 +124,110 @@ export default function CourseManagement({ onOpenCourse }: Props) {
   const totalPublished = courses.filter(course => course.status === 'published').length
   const totalStudents = courses.reduce((acc, course) => acc + course.students, 0)
   const estimatedRevenue = courses.reduce((acc, course) => acc + course.students * course.price, 0)
+  const totalDraft = total - totalPublished
+  const averagePrice = total ? Math.round(courses.reduce((acc, course) => acc + course.price, 0) / total) : 0
+  const averageDuration = total
+    ? Math.round(
+        courses.reduce((acc, course) => {
+          const hours = Number(course.duration.match(/\d+/)?.[0] ?? 0)
+          return acc + (Number.isFinite(hours) ? hours : 0)
+        }, 0) / total
+      )
+    : 0
+
+  const statusData = useMemo(
+    () => [
+      { name: 'Xuất bản', value: totalPublished, color: '#22c55e' },
+      { name: 'Nháp', value: totalDraft, color: '#cbd5e1' },
+    ],
+    [totalDraft, totalPublished]
+  )
+
+  const categoryData = useMemo(() => {
+    const map = new Map<string, number>()
+    courses.forEach(course => {
+      const key = course.category || 'Khác'
+      map.set(key, (map.get(key) ?? 0) + 1)
+    })
+    return Array.from(map.entries()).map(([name, value]) => ({ name, value }))
+  }, [courses])
+
+  const topCoursesByStudents = useMemo(() => {
+    return [...courses]
+      .sort((a, b) => b.students - a.students)
+      .slice(0, 5)
+      .map(course => ({
+        name: course.title.length > 24 ? `${course.title.slice(0, 22)}…` : course.title,
+        students: course.students,
+      }))
+  }, [courses])
+
+  const topCoursesChartData = topCoursesByStudents.length
+    ? topCoursesByStudents
+    : [
+        { name: 'React cơ bản (demo)', students: 120 },
+        { name: 'UI/UX fundamentals (demo)', students: 95 },
+        { name: 'Java Spring (demo)', students: 80 },
+        { name: 'Marketing 101 (demo)', students: 64 },
+        { name: 'Business basics (demo)', students: 48 },
+      ]
+
+  const hasCourseData = total > 0
+  const statusChartData = hasCourseData
+    ? statusData
+    : [
+        { name: 'Xuất bản (demo)', value: 6, color: '#22c55e' },
+        { name: 'Nháp (demo)', value: 3, color: '#cbd5e1' },
+      ]
+  const categoryChartData = categoryData.length
+    ? categoryData
+    : [
+        { name: 'Programming (demo)', value: 4 },
+        { name: 'Design (demo)', value: 2 },
+        { name: 'Business (demo)', value: 1 },
+      ]
+
+  const statusChartConfig = useMemo(
+    () => ({
+      labels: statusChartData.map(item => item.name),
+      datasets: [
+        {
+          data: statusChartData.map(item => item.value),
+          backgroundColor: statusChartData.map(item => item.color),
+          borderWidth: 1,
+        },
+      ],
+    }),
+    [statusChartData]
+  )
+
+  const categoryChartConfig = useMemo(
+    () => ({
+      labels: categoryChartData.map(item => item.name),
+      datasets: [
+        {
+          data: categoryChartData.map(item => item.value),
+          backgroundColor: categoryChartData.map((_, idx) => chartPalette[idx % chartPalette.length]),
+          borderWidth: 1,
+        },
+      ],
+    }),
+    [categoryChartData]
+  )
+
+  const topCoursesChartConfig = useMemo(
+    () => ({
+      labels: topCoursesChartData.map(item => item.name),
+      datasets: [
+        {
+          data: topCoursesChartData.map(item => item.students),
+          backgroundColor: topCoursesChartData.map((_, idx) => chartPalette[(idx + 2) % chartPalette.length]),
+          borderWidth: 1,
+        },
+      ],
+    }),
+    [topCoursesChartData]
+  )
 
   const resetForm = () => {
     setFormData({
@@ -338,143 +472,216 @@ export default function CourseManagement({ onOpenCourse }: Props) {
           <h1 className="mb-2">Quản lý khóa học</h1>
           <p className="text-gray-600">Theo dõi, tạo mới và chỉnh sửa khóa học của hệ thống</p>
         </div>
-        <Dialog
-          open={isDialogOpen}
-          onOpenChange={open => {
-            setIsDialogOpen(open)
-            if (!open) {
-              setEditingCourse(null)
-              resetForm()
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button onClick={handleCreateCourse}>
-              <Plus className="w-4 h-4 mr-2" /> Thêm khóa học
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingCourse ? 'Chỉnh sửa khóa học' : 'Thêm khóa học mới'}</DialogTitle>
-              <DialogDescription>Vui lòng nhập thông tin chi tiết của khóa học</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Mã khóa học</Label>
-                <Input
-                  value={formData.code}
-                  onChange={event => setFormData(prev => ({ ...prev, code: event.target.value }))}
-                  placeholder="VD: REACT-2025"
-                  disabled={isSaving}
-                />
+        <div className="flex items-center gap-2">
+          <Dialog open={isStatsOpen} onOpenChange={setIsStatsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">Xem thống kê</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Thống kê khóa học</DialogTitle>
+                <DialogDescription>Tổng quan nhanh về số liệu khóa học bạn quản lý.</DialogDescription>
+              </DialogHeader>
+
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold">Trạng thái</h4>
+                  </div>
+                  <div className="h-72 w-full">
+                    {isStatsOpen && (
+                      <Pie
+                        key={`status-${statsChartKey}`}
+                        data={statusChartConfig}
+                        options={pieOptions}
+                      />
+                    )}
+                    {!hasCourseData && (
+                      <p className="mt-2 text-xs text-slate-500">Hiển thị số liệu demo do chưa có dữ liệu thực.</p>
+                    )}
+                  </div>
+                </Card>
+
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold">Danh mục</h4>
+                  </div>
+                  <div className="h-72 w-full">
+                    {isStatsOpen && (
+                      <Bar
+                        key={`category-${statsChartKey}`}
+                        data={categoryChartConfig}
+                        options={horizontalBarOptions}
+                      />
+                    )}
+                    {categoryData.length === 0 && (
+                      <p className="mt-2 text-xs text-slate-500">Đang hiển thị danh mục demo để minh họa.</p>
+                    )}
+                  </div>
+                </Card>
               </div>
-              <div>
-                <Label>Tên khóa học</Label>
-                <Input
-                  value={formData.title}
-                  onChange={event => setFormData(prev => ({ ...prev, title: event.target.value }))}
-                  placeholder="VD: React nâng cao"
-                  disabled={isSaving}
-                />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <Card className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold">Top khóa học theo học viên</h4>
+                  </div>
+                  <div className="h-72 w-full">
+                    {isStatsOpen && (
+                      <Bar
+                        key={`top-${statsChartKey}`}
+                        data={topCoursesChartConfig}
+                        options={horizontalBarOptions}
+                      />
+                    )}
+                    {topCoursesByStudents.length === 0 && (
+                      <p className="mt-2 text-xs text-slate-500">Đang hiển thị dữ liệu demo do chưa có số liệu thực.</p>
+                    )}
+                  </div>
+                </Card>
               </div>
-              <div>
-                <Label>Mô tả</Label>
-                <Textarea
-                  rows={4}
-                  value={formData.description}
-                  onChange={event => setFormData(prev => ({ ...prev, description: event.target.value }))}
-                  placeholder="Mô tả chi tiết khóa học..."
-                  disabled={isSaving}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={isDialogOpen}
+            onOpenChange={open => {
+              setIsDialogOpen(open)
+              if (!open) {
+                setEditingCourse(null)
+                resetForm()
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button onClick={handleCreateCourse}>
+                <Plus className="w-4 h-4 mr-2" /> Thêm khóa học
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingCourse ? 'Chỉnh sửa khóa học' : 'Thêm khóa học mới'}</DialogTitle>
+                <DialogDescription>Vui lòng nhập thông tin chi tiết của khóa học</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
                 <div>
-                  <Label>Danh mục</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={value => setFormData(prev => ({ ...prev, category: value }))}
-                    disabled={isSaving}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Danh mục" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Programming">Lập trình</SelectItem>
-                      <SelectItem value="Design">Thiết kế</SelectItem>
-                      <SelectItem value="Business">Kinh doanh</SelectItem>
-                      <SelectItem value="Marketing">Marketing</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Cấp độ</Label>
-                  <Select
-                    value={formData.level}
-                    onValueChange={value => setFormData(prev => ({ ...prev, level: value }))}
-                    disabled={isSaving}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Cấp độ" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Beginner">Cơ bản</SelectItem>
-                      <SelectItem value="Intermediate">Trung cấp</SelectItem>
-                      <SelectItem value="Advanced">Nâng cao</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Giá (VNĐ)</Label>
+                  <Label>Mã khóa học</Label>
                   <Input
-                    type="number"
-                    min={0}
-                    value={formData.price}
-                    onChange={event => setFormData(prev => ({ ...prev, price: event.target.value }))}
-                    placeholder="1500000"
+                    value={formData.code}
+                    onChange={event => setFormData(prev => ({ ...prev, code: event.target.value }))}
+                    placeholder="VD: REACT-2025"
                     disabled={isSaving}
                   />
                 </div>
                 <div>
-                  <Label>Thời lượng (giờ)</Label>
+                  <Label>Tên khóa học</Label>
                   <Input
-                    type="number"
-                    min={1}
-                    value={formData.duration}
-                    onChange={event => setFormData(prev => ({ ...prev, duration: event.target.value }))}
-                    placeholder="40"
+                    value={formData.title}
+                    onChange={event => setFormData(prev => ({ ...prev, title: event.target.value }))}
+                    placeholder="VD: React nâng cao"
                     disabled={isSaving}
                   />
                 </div>
+                <div>
+                  <Label>Mô tả</Label>
+                  <Textarea
+                    rows={4}
+                    value={formData.description}
+                    onChange={event => setFormData(prev => ({ ...prev, description: event.target.value }))}
+                    placeholder="Mô tả chi tiết khóa học..."
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Danh mục</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={value => setFormData(prev => ({ ...prev, category: value }))}
+                      disabled={isSaving}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Danh mục" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Programming">Lập trình</SelectItem>
+                        <SelectItem value="Design">Thiết kế</SelectItem>
+                        <SelectItem value="Business">Kinh doanh</SelectItem>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Cấp độ</Label>
+                    <Select
+                      value={formData.level}
+                      onValueChange={value => setFormData(prev => ({ ...prev, level: value }))}
+                      disabled={isSaving}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Cấp độ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Beginner">Cơ bản</SelectItem>
+                        <SelectItem value="Intermediate">Trung cấp</SelectItem>
+                        <SelectItem value="Advanced">Nâng cao</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Giá (VNĐ)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={formData.price}
+                      onChange={event => setFormData(prev => ({ ...prev, price: event.target.value }))}
+                      placeholder="1500000"
+                      disabled={isSaving}
+                    />
+                  </div>
+                  <div>
+                    <Label>Thời lượng (giờ)</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={formData.duration}
+                      onChange={event => setFormData(prev => ({ ...prev, duration: event.target.value }))}
+                      placeholder="40"
+                      disabled={isSaving}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Trạng thái</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={value => setFormData(prev => ({ ...prev, status: value as 'draft' | 'published' }))}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Trạng thái" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Bản nháp</SelectItem>
+                      <SelectItem value="published">Xuất bản</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <Label>Trạng thái</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={value => setFormData(prev => ({ ...prev, status: value as 'draft' | 'published' }))}
-                  disabled={isSaving}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Bản nháp</SelectItem>
-                    <SelectItem value="published">Xuất bản</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
-                Hủy
-              </Button>
-              <Button onClick={handleSaveCourse} disabled={isSaving}>
-                {isSaving ? 'Đang lưu...' : editingCourse ? 'Cập nhật' : 'Tạo mới'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
+                  Hủy
+                </Button>
+                <Button onClick={handleSaveCourse} disabled={isSaving}>
+                  {isSaving ? 'Đang lưu...' : editingCourse ? 'Cập nhật' : 'Tạo mới'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
