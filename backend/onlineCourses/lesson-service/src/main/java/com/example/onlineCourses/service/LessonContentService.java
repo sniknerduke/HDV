@@ -92,9 +92,6 @@ public class LessonContentService {
         l.setSection(section);
         l.setTitle(req.getTitle().trim());
         l.setType(req.getType());
-        l.setFileName(req.getFileName());
-        l.setMimeType(req.getMimeType());
-        l.setSize(req.getSize());
         l.setVideoUrl(req.getVideoUrl());
         l.setPosition(nextLessonPos(sectionId));
         return lessonRepo.save(l);
@@ -105,9 +102,6 @@ public class LessonContentService {
         Lesson l = findLesson(courseId, sectionId, lessonId);
         if (StringUtils.hasText(req.getTitle())) l.setTitle(req.getTitle().trim());
         if (req.getType() != null) l.setType(req.getType());
-        if (req.getFileName() != null) l.setFileName(req.getFileName());
-        if (req.getMimeType() != null) l.setMimeType(req.getMimeType());
-        if (req.getSize() != null) l.setSize(req.getSize());
         if (req.getVideoUrl() != null) l.setVideoUrl(req.getVideoUrl());
         return lessonRepo.save(l);
     }

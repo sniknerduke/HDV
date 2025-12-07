@@ -15,7 +15,11 @@ import { Course as SvcCourse, createCourse, deleteCourseRemote, getCourses, pers
 type Course = SvcCourse
 type StatusFilter = 'all' | 'draft' | 'published'
 
-export default function CourseManagement() {
+type Props = {
+  onOpenCourse?: (course: Course) => void;
+}
+
+export default function CourseManagement({ onOpenCourse }: Props) {
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -565,7 +569,7 @@ export default function CourseManagement() {
                 <TableHead>Thời lượng</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Học viên</TableHead>
-                <TableHead className="w-[160px]">Hành động</TableHead>
+                <TableHead className="w-[220px]">Hành động</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -587,6 +591,11 @@ export default function CourseManagement() {
                   <TableCell className="text-right">{course.students}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
+                      {onOpenCourse ? (
+                        <Button variant="outline" size="sm" onClick={() => onOpenCourse(course)}>
+                          <BookOpen className="w-4 h-4 mr-1" /> Nội dung
+                        </Button>
+                      ) : null}
                       <Button variant="outline" size="sm" onClick={() => handleEditCourse(course)}>
                         <Pencil className="w-4 h-4" />
                       </Button>

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Search, Star, Users, Clock } from 'lucide-react';
-import { Course as SvcCourse, fetchCoursesForCatalog, getCachedCourses } from '../../services/courseService';
+import { Course as SvcCourse, fetchCoursesForCatalog, fetchPublicCourses, getCachedCourses } from '../../services/courseService';
 
 const fallbackImages = [
   'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop',
@@ -63,14 +63,13 @@ export default function CourseCatalog({ onCourseSelect, userRole = null, onAddTo
   const [level, setLevel] = useState('all');
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token') ?? undefined;
     (async () => {
       try {
-        const raw = await fetchCoursesForCatalog(token);
-        const preferred = raw.filter(course => course.status === 'published');
-        const source = preferred.length > 0 ? preferred : raw;
+        const token = localStorage.getItem('auth_token') ?? undefined;
+        const raw = token ? await fetchCoursesForCatalog(token) : await fetchPublicCourses();
+        const source = raw.length > 0 ? raw : await fetchPublicCourses();
         setCourses(source.map((course, index) => decorateCourse(course, index)));
-        if (preferred.length === 0 && raw.length === 0) {
+        if (source.length === 0) {
           setError('Hiện chưa có khóa học nào.');
         }
       } catch (err) {

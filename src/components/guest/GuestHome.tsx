@@ -1,36 +1,27 @@
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Search, Star, Users, BookOpen } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { fetchCoursesForCatalog, fetchPublicCourses, Course } from '../../services/courseService';
 
-const featuredCourses = [
-  {
-    id: 1,
-    title: 'Lập trình React cơ bản',
-    instructor: 'Nguyễn Văn A',
-    price: '500,000đ',
-    rating: 4.8,
-    students: 1234,
-    image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop'
-  },
-  {
-    id: 2,
-    title: 'Tiếng Anh giao tiếp',
-    instructor: 'Trần Thị B',
-    price: '300,000đ',
-    rating: 4.9,
-    students: 2341,
-    image: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&h=250&fit=crop'
-  },
-  {
-    id: 3,
-    title: 'Thiết kế UI/UX',
-    instructor: 'Lê Văn C',
-    price: '450,000đ',
-    rating: 4.7,
-    students: 987,
-    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=250&fit=crop'
-  }
+const fallbackImages = [
+  'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop',
+  'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&h=250&fit=crop',
+  'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=250&fit=crop',
+  'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=250&fit=crop'
 ];
+
+const fallbackInstructors = [
+  'Đội ngũ EduPlatform',
+  'Chuyên gia EduPlatform',
+  'Giảng viên EduPlatform'
+];
+
+const formatPrice = (value: number | string): string => {
+  if (typeof value === 'string') return value;
+  if (!Number.isFinite(value) || value <= 0) return 'Miễn phí';
+  return `${value.toLocaleString('vi-VN')}đ`;
+};
 
 interface GuestHomeProps {
   onNavigate: (page: string) => void;
@@ -38,6 +29,27 @@ interface GuestHomeProps {
 }
 
 export default function GuestHome({ onNavigate, onCourseSelect }: GuestHomeProps) {
+  const [courses, setCourses] = useState<any[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data: Course[] = await fetchCoursesForCatalog(undefined).catch(() => fetchPublicCourses());
+        const decorated = data.map((c, idx) => ({
+          ...c,
+          instructor: fallbackInstructors[idx % fallbackInstructors.length],
+          price: formatPrice(c.price),
+          rating: 4.7 + (idx % 3) * 0.05,
+          students: c.students ?? 0,
+          image: fallbackImages[idx % fallbackImages.length],
+        }));
+        setCourses(decorated);
+      } catch (err) {
+        console.warn('Không tải được khóa học public, dùng danh sách tĩnh', err);
+        setCourses([]);
+      }
+    })();
+  }, []);
   return (
     <div>
       {/* Hero Section */}
@@ -74,7 +86,7 @@ export default function GuestHome({ onNavigate, onCourseSelect }: GuestHomeProps
           </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featuredCourses.map(course => (
+          {(courses.length > 0 ? courses : []).map(course => (
             <Card key={course.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={() => onCourseSelect(course)}>
               <img src={course.image} alt={course.title} className="w-full h-48 object-cover" />
               <CardContent className="p-4">
@@ -83,14 +95,17 @@ export default function GuestHome({ onNavigate, onCourseSelect }: GuestHomeProps
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                    <span className="text-sm">{course.rating}</span>
-                    <span className="text-gray-400 text-sm">({course.students})</span>
+                    <span className="text-sm">{course.rating?.toFixed ? course.rating.toFixed(1) : course.rating}</span>
+                    <span className="text-gray-400 text-sm">({course.students ?? 0})</span>
                   </div>
                   <span className="font-semibold">{course.price}</span>
                 </div>
               </CardContent>
             </Card>
           ))}
+          {courses.length === 0 && (
+            <div className="col-span-3 text-center text-gray-500">Chưa có khóa học nào.</div>
+          )}
         </div>
       </div>
           {/* Stats Section */}

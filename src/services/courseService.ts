@@ -31,9 +31,13 @@ export interface Course {
   students: number;
   status: 'published' | 'draft';
   sections?: Section[];
+  createdBy?: string;
 }
 
-const COURSE_API_BASE = import.meta.env.VITE_LESSON_SERVICE_URL ?? 'http://localhost:8082';
+// Use dedicated course service URL; fall back to gateway (9090)
+const COURSE_API_BASE = import.meta.env.VITE_COURSE_SERVICE_URL
+  ?? import.meta.env.VITE_LESSON_SERVICE_URL // backward compatibility
+  ?? 'http://localhost:9090';
 
 interface BackendCourse {
   id: number;
@@ -42,6 +46,7 @@ interface BackendCourse {
   description?: string;
   price?: number;
   duration?: number;
+  createdBy?: string;
 }
 
 export interface CreateCoursePayload {
@@ -118,6 +123,7 @@ const mapBackendCourse = (input: BackendCourse, existing?: Course, extras?: Part
     students: extras?.students ?? existing?.students ?? 0,
     status: extras?.status ?? existing?.status ?? DEFAULT_STATUS,
     sections: existing?.sections,
+    createdBy: input.createdBy ?? existing?.createdBy,
   };
 };
 
@@ -183,13 +189,30 @@ export async function getCourses(token: string): Promise<Course[]> {
   return mapped;
 }
 
+export async function fetchPublicCourses(): Promise<Course[]> {
+  const response = await fetch(`${COURSE_API_BASE}/api/courses/public/list`);
+  const payload = await handleApiResponse<BackendCourse[]>(response);
+  const stored = readStorage();
+  const mapped = payload.map((item, idx) => {
+    const existing = stored.find((course) => course.id === item.id);
+    return mapBackendCourse(item, existing);
+  });
+  writeStorage(mergeCourses(stored, mapped));
+  return mapped;
+}
+
 export async function fetchCoursesForCatalog(token?: string): Promise<Course[]> {
   if (token) {
     try {
       return await getCourses(token);
     } catch (error) {
-      console.warn('Không thể tải khóa học từ backend, sử dụng dữ liệu cache.', error);
+      console.warn('Không thể tải khóa học (có token), thử endpoint public.', error);
     }
+  }
+  try {
+    return await fetchPublicCourses();
+  } catch (error) {
+    console.warn('Không thể tải khóa học public, sử dụng cache.', error);
   }
   const cached = getCachedCourses();
   if (cached.length > 0) {

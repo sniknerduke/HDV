@@ -24,8 +24,9 @@ public class CourseController {
 
     @PreAuthorize("hasAnyRole('STAFF','MANAGER','ADMIN')")
     @PostMapping("/public/create")
-    public Course createCourse(@RequestBody Course course) {
-        return courseService.createCourse(course);
+    public Course createCourse(@RequestBody Course course, Authentication authentication) {
+        String owner = authentication != null ? authentication.getName() : null;
+        return courseService.createCourse(course, owner);
     }
 
     @PreAuthorize("hasAnyRole('STAFF','MANAGER','ADMIN')")
@@ -52,11 +53,14 @@ public class CourseController {
 
     @PreAuthorize("hasAnyRole('USER','STAFF','MANAGER','ADMIN')")
     @GetMapping("/list")
-    public List<Course> getAllCourses() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("Auth principal: " + auth);
-        return courseService.getAllCourses();
-
+    public List<Course> getAllCourses(Authentication authentication) {
+        Authentication auth = authentication != null ? authentication : SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth != null && auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        if (isAdmin) {
+            return courseService.getAllCourses();
+        }
+        String owner = auth != null ? auth.getName() : null;
+        return courseService.getCoursesByOwner(owner);
     }
 
     @PreAuthorize("hasAnyRole('USER','STAFF','MANAGER','ADMIN')")
@@ -68,6 +72,12 @@ public class CourseController {
     @GetMapping("id/{id}")
     public Course getById(@PathVariable Long id) {
         return courseService.getById(id);
+    }
+
+    // Public list for guest users (no auth)
+    @GetMapping("/public/list")
+    public List<Course> getAllCoursesPublic() {
+        return courseService.getAllCourses();
     }
 
     @PreAuthorize("hasAnyRole('USER','STAFF','MANAGER','ADMIN')")

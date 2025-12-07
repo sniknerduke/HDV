@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .cors(cors -> {}) // bật CORS
                 .authorizeHttpRequests(auth -> auth
                                 // Public endpoints
-                                .requestMatchers("/api/courses/id/{id}","/api/users/register", "/api/users/verify-otp", "/api/users/login").permitAll()
+                                .requestMatchers("/api/courses/id/{id}", "/api/courses/public/**", "/api/users/register", "/api/users/verify-otp", "/api/users/login").permitAll()
 //                        .requestMatchers("/api/courses/public/**").permitAll()
 //
 //                        // User endpoints

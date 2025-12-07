@@ -31,6 +31,9 @@ public class Course {
 
     private String description;
 
+    /** Người tạo / giáo viên sở hữu khóa học. Dùng để lọc danh sách theo giáo viên. */
+    private String createdBy;
+
     public Course() {}
 
 //    // Getters and setters
@@ -112,5 +115,13 @@ public class Course {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(String createdBy) {
+        this.createdBy = createdBy;
     }
 }

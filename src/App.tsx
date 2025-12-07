@@ -84,6 +84,7 @@ export default function App() {
     'admin-dashboard': '/admin',
     'user-management': '/admin/users',
     'admin-courses': '/admin/courses',
+    'admin-course-content': '/admin/course-content',
   } as Record<string, string>), []);
 
   const pathToPage = (path: string): string => {
@@ -464,7 +465,10 @@ export default function App() {
     return <AdminDashboard onNavigate={navigateTo} />;
   }
   if (currentPage === 'user-management') return <UserManagement />;
-  if (currentPage === 'admin-courses') return <CourseManagement />;
+  if (currentPage === 'admin-courses') return <CourseManagement onOpenCourse={(course: any) => { setSelectedCourse(course); localStorage.setItem('last_course_id', String(course.id)); navigateTo('admin-course-content'); }} />;
+  if (currentPage === 'admin-course-content') return (
+    <TeacherCourseContentManager course={selectedCourse} onNavigate={navigateTo} backPage="admin-courses" />
+  );
   // removed admin-settings page
     
     return <GuestHome onNavigate={setCurrentPage} onCourseSelect={handleCourseSelect} />;

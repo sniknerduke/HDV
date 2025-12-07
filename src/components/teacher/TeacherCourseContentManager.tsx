@@ -6,7 +6,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Plus, Edit, Trash2, ArrowUp, ArrowDown, ChevronLeft, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, ArrowUp, ArrowDown, ChevronLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Course,
@@ -29,7 +29,7 @@ import {
   LessonPayload,
 } from '../../services/lessonService';
 
-export default function TeacherCourseContentManager({ course, onNavigate }: { course: Course | null; onNavigate: (p: string) => void }) {
+export default function TeacherCourseContentManager({ course, onNavigate, backPage = 'manage-courses' }: { course: Course | null; onNavigate: (p: string) => void; backPage?: string }) {
   const [courseId, setCourseId] = useState<number | null>(course?.id ?? null);
   const [data, setData] = useState<Course | null>(course);
   const [authToken, setAuthToken] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
   const [contextSection, setContextSection] = useState<Section | null>(null);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [lessonTitle, setLessonTitle] = useState('');
-  const [lessonFile, setLessonFile] = useState<File | null>(null);
+  const [lessonVideoUrl, setLessonVideoUrl] = useState('');
   const [lessonError, setLessonError] = useState('');
 
   const beginAddSection = () => {
@@ -158,7 +158,7 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
     setContextSection(s);
     setEditingLesson(null);
     setLessonTitle('');
-    setLessonFile(null);
+    setLessonVideoUrl('');
     setLessonError('');
     setLessonDialogOpen(true);
   };
@@ -167,7 +167,7 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
     setContextSection(s);
     setEditingLesson(l);
     setLessonTitle(l.title);
-    setLessonFile(null);
+    setLessonVideoUrl(l.videoUrl ?? '');
     setLessonError('');
     setLessonDialogOpen(true);
   };
@@ -176,24 +176,21 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
     if (!authToken) { toast.error('Thiếu token, vui lòng đăng nhập lại.'); return; }
     if (courseId == null || !contextSection) { toast.error('Không xác định được khóa học/chương.'); return; }
     if (!lessonTitle.trim()) { setLessonError('Tiêu đề bài học không được để trống.'); return; }
+    const videoUrlTrimmed = lessonVideoUrl.trim();
     try {
       if (editingLesson) {
-        const patch: LessonPayload = { title: lessonTitle.trim() };
-        if (lessonFile) {
-          patch.fileName = lessonFile.name;
-          patch.mimeType = lessonFile.type;
-          patch.size = lessonFile.size;
-          patch.type = 'video';
-        }
+        const patch: LessonPayload = {
+          title: lessonTitle.trim(),
+          videoUrl: videoUrlTrimmed || undefined,
+          type: videoUrlTrimmed ? 'video' : undefined,
+        };
         await updateLesson(courseId, contextSection.id, editingLesson.id, patch, authToken);
         toast.success('Đã cập nhật bài học');
       } else {
         const payload: LessonPayload = {
           title: lessonTitle.trim(),
-          type: lessonFile ? 'video' : undefined,
-          fileName: lessonFile?.name,
-          mimeType: lessonFile?.type,
-          size: lessonFile?.size,
+          videoUrl: videoUrlTrimmed || undefined,
+          type: videoUrlTrimmed ? 'video' : undefined,
         };
         await createLesson(courseId, contextSection.id, payload, authToken);
         toast.success('Đã thêm bài học');
@@ -201,6 +198,7 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
       setLessonDialogOpen(false);
       setEditingLesson(null);
       setContextSection(null);
+      setLessonVideoUrl('');
       const sectionsDto = await fetchCourseStructure(courseId, authToken);
       setData((prev) => (prev ? { ...prev, sections: mapSections(sectionsDto) } : prev));
     } catch (err) {
@@ -249,7 +247,7 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
   if (!data) {
     return (
       <div className="p-6">
-        <Button variant="ghost" onClick={() => onNavigate('manage-courses')} className="mb-4 inline-flex items-center gap-2"><ChevronLeft className="w-4 h-4"/> Quay lại</Button>
+        <Button variant="ghost" onClick={() => onNavigate(backPage)} className="mb-4 inline-flex items-center gap-2"><ChevronLeft className="w-4 h-4"/> Quay lại</Button>
         <Card>
           <CardContent className="p-8 text-center text-gray-600">Không tìm thấy khóa học. Hãy quay lại danh sách.</CardContent>
         </Card>
@@ -365,28 +363,13 @@ export default function TeacherCourseContentManager({ course, onNavigate }: { co
               {lessonError && <div className="text-xs text-red-600 mt-1">{lessonError}</div>}
             </div>
             <div>
-              <Label>Tải lên video (tùy chọn)</Label>
-              <div className="mt-2 border-2 border-dashed rounded-lg p-6 text-center">
-                <input id="lesson-video" type="file" accept="video/*" className="hidden" onChange={(e) => setLessonFile(e.target.files?.[0] || null)} />
-                <label htmlFor="lesson-video" className="cursor-pointer block">
-                  {lessonFile ? (
-                    <div>
-                      <Upload className="w-10 h-10 mx-auto text-blue-600" />
-                      <div className="mt-2 text-sm">{lessonFile.name}</div>
-                      <div className="text-xs text-gray-500">{(lessonFile.size/1024/1024).toFixed(2)} MB</div>
-                    </div>
-                  ) : (
-                    <div>
-                      <Upload className="w-10 h-10 mx-auto text-gray-400" />
-                      <div className="mt-2 text-sm text-gray-600">Click để chọn tệp video</div>
-                      <div className="text-xs text-gray-500">Video sẽ được tải lên khi tích hợp backend</div>
-                    </div>
-                  )}
-                </label>
-              </div>
-              {editingLesson && (editingLesson.fileName || editingLesson.videoUrl) && !lessonFile && (
-                <div className="text-xs text-gray-600 mt-2">Hiện có: {editingLesson.fileName ? editingLesson.fileName : editingLesson.videoUrl}</div>
-              )}
+              <Label>Link YouTube (tùy chọn)</Label>
+              <Input
+                value={lessonVideoUrl}
+                onChange={(e) => setLessonVideoUrl(e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+              <div className="text-xs text-gray-500 mt-1">Dán link YouTube để phát qua iframe, bỏ trống nếu chưa có video.</div>
             </div>
           </div>
           <DialogFooter>

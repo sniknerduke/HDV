@@ -21,8 +21,8 @@ public class CourseService {
     @Autowired
     private ProviderRepository providerRepo;
 
-    public Course createCourse(Course course) {
-        // Nếu không có provider thì chỉ lưu trực tiếp
+    public Course createCourse(Course course, String createdBy) {
+        course.setCreatedBy(createdBy);
         return courseRepo.save(course);
     }
 
@@ -41,6 +41,13 @@ public class CourseService {
 
     public List<Course> getAllCourses() {
         return courseRepo.findAll();
+    }
+
+    public List<Course> getCoursesByOwner(String createdBy) {
+        if (createdBy == null || createdBy.isBlank()) {
+            return List.of();
+        }
+        return courseRepo.findByCreatedBy(createdBy);
     }
 
     public Course getByCode(String code) {

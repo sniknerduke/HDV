@@ -9,6 +9,8 @@ import java.util.List;
 public interface CourseRepository extends JpaRepository<Course, Long> {
      Course findByCode(String code);
 
+     List<Course> findByCreatedBy(String createdBy);
+
 //     List<Course> findByProvider(Provider provider);
 //    List<Course> findByProviderId(Long providerId);
 
