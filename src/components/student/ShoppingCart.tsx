@@ -5,37 +5,65 @@ import { Button } from '../ui/button';
 import { Trash2, ShoppingCart as CartIcon } from 'lucide-react';
 import { Badge } from '../ui/badge';
 
+import { getCart, removeFromCart, clearCart, CartItem } from '../../services/cartService';
+import { checkout } from '../../services/orderService';
+
 interface ShoppingCartProps { onNavigate: (page: string) => void; }
 
-export interface CartItem {
-  id: string | number;
-  title: string;
-  instructor?: string;
-  price: number;
-  image?: string;
-}
+// export interface CartItem {
+//   id: string | number;
+//   title: string;
+//   instructor?: string;
+//   price: number;
+//   image?: string;
+// }
 
 export default function ShoppingCart({ onNavigate }: ShoppingCartProps) {
   const [items, setItems] = useState<CartItem[]>([]);
+const [total, setTotal] = useState(0);
 
-  useEffect(() => {
+useEffect(() => {
+  getCart().then((res) => {
+    setItems(res.items);
+    setTotal(res.totalPrice);
+  }).catch(() => {
+    setItems([]);
+    setTotal(0);
+  });
+}, []);
+
+// useEffect(() => {
+//   getCart().then(setItems).catch(() => setItems([]));
+// }, []);
+
+//   useEffect(() => {
+//     try {
+//         setItems(getCart());
+//     } catch {}
+//   }, []);
+
+//   const total = items.reduce((sum, item) => sum + (item.coursePrice || 0), 0);
+
+  const handleRemove = async (id: number) => {
+      const next = await removeFromCart(id);
+setItems(next.items);       // cập nhật lại mảng
+  setTotal(next.totalPrice);  // cập nhật lại tổng
+    };
+
+  const handleCheckout = async () => {
     try {
-      const raw = localStorage.getItem('cart');
-      if (raw) setItems(JSON.parse(raw));
-    } catch {}
-  }, []);
+      const order = await checkout();   // ✅ hợp lệ
+      console.log("Order created:", order);
 
-  const total = items.reduce((sum, item) => sum + (item.price || 0), 0);
-
-  const handleRemove = (id: string | number) => {
-    const next = items.filter(i => i.id !== id);
-    setItems(next);
-    try { localStorage.setItem('cart', JSON.stringify(next)); } catch {}
+    // Lưu order vào localStorage để Checkout đọc lại
+    localStorage.setItem("current_order", JSON.stringify(order));
+      // Sau khi checkout thành công, điều hướng sang trang checkout
+      onNavigate('checkout');
+    } catch (error) {
+      console.error("Checkout failed:", error);
+    }
   };
 
-  const handleCheckout = () => {
-    onNavigate('checkout');
-  };
 
   if (items.length === 0) {
     return (
@@ -61,25 +89,26 @@ export default function ShoppingCart({ onNavigate }: ShoppingCartProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
-            <Card key={item.id}>
+            <Card key={item.cartItemId}>
               <CardContent className="p-4">
                 <div className="flex gap-4">
-                  <img                          
-                    src={item.image} 
-                    alt={item.title}
+                  <img
+                    src={`https://picsum.photos/200/120?random=${item.courseId}`}
+                    alt={item.courseTitle}
                     className="w-32 h-20 object-cover rounded"
                   />
+
                   <div className="flex-1">
-                    <h3 className="mb-1">{item.title}</h3>
+                    <h3 className="mb-1">{item.courseTitle}</h3>
                     {item.instructor && <p className="text-sm text-gray-600 mb-2">Giảng viên: {item.instructor}</p>}
                     <Badge variant="secondary">Bestseller</Badge>
                   </div>
                   <div className="text-right">
-                    <p className="mb-2">{formatCurrency(item.price)}</p>
+                    <p className="mb-2">{formatCurrency(item.coursePrice)}</p>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleRemove(item.id)}
+                      onClick={() => handleRemove(item.cartItemId)}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4 mr-1" />

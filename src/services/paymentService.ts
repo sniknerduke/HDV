@@ -1,3 +1,5 @@
+import { api } from "./axiosConfig"
+
 export interface CreateVnpayRequest {
   orderId: string;
   amount: number; // VND
@@ -10,7 +12,7 @@ export interface CreateVnpayResponse {
   paymentUrl: string;
 }
 
-const BASE = 'http://localhost:8081/payment/vnpay';
+// const BASE = 'http://localhost:9090/api/payment/vnpay';
 
 export interface PaymentTransaction {
   id?: number;
@@ -23,37 +25,37 @@ export interface PaymentTransaction {
   updatedAt?: string;
 }
 
-export async function createVnpayPayment(payload: CreateVnpayRequest): Promise<CreateVnpayResponse> {
-  let res: Response;
-  // Always use backend return endpoint regardless of caller input
-  const origin = new URL(BASE).origin;
+export async function createVnpayPayment(
+  payload: CreateVnpayRequest
+): Promise<CreateVnpayResponse> {
+  // Luôn enforce returnUrl từ FE origin, không dùng input trực tiếp
+  const origin = window.location.origin;
   const enforcedReturnUrl = `${origin}/payment/vnpay/return`;
+
   const body = {
     orderId: payload.orderId,
     amount: Math.round(payload.amount),
     returnUrl: enforcedReturnUrl,
-    ipAddress: payload.ipAddress || '127.0.0.1'
+    ipAddress: payload.ipAddress || "127.0.0.1",
   };
-  try {
-    res = await fetch(`${BASE}/create`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-  } catch (networkErr: any) {
-    throw new Error('NETWORK_ERROR: ' + (networkErr?.message || 'Unknown'));
-  }
-  if (!res.ok) {
-    let body: any = null;
-    try { body = await res.text(); } catch {}
-    throw new Error(`HTTP_${res.status}: ${body || 'Failed to create payment'}`);
-  }
-  try {
-    return await res.json();
-  } catch (parseErr) {
-    throw new Error('PARSE_ERROR: cannot parse response JSON');
-  }
+
+  const res = await api.post("/payment/vnpay/create", body);
+  return res.data;
 }
+// export async function createVnpayPayment(payload: CreateVnpayRequest): Promise<CreateVnpayResponse> {
+//   let res: Response;
+//   // Always use backend return endpoint regardless of caller input
+//   const origin = new URL(BASE).origin;
+//   const enforcedReturnUrl = `${origin}/payment/vnpay/return`;
+//   const body = {
+//     orderId: payload.orderId,
+//     amount: Math.round(payload.amount),
+//     returnUrl: enforcedReturnUrl,
+//     ipAddress: payload.ipAddress || '127.0.0.1'
+//   };
+//   const res = await api.post(`/payment/vnpay/create`, body);
+//     return res.data;
+// }
 
 export async function getPaymentStatus(orderId: string): Promise<PaymentTransaction | null> {
   const res = await fetch(`${BASE}/status/${encodeURIComponent(orderId)}`);

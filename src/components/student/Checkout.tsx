@@ -23,16 +23,23 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
 
-  const [cartItems, setCartItems] = useState<Array<{ id: string | number; title: string; price: number }>>([]);
-  const cartTotal = cartItems.reduce((sum, i) => sum + (i.price || 0), 0);
+    const [cartItems, setCartItems] = useState<Array<{ id: string | number; title: string; price: number }>>([]);
+    const [cartTotal, setCartTotal] = useState(0);
+//     const cartTotal = cartItems.reduce((sum, i) => sum + (i.price || 0), 0);
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem('cart');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setCartItems(parsed.map((c: any) => ({ id: c.id, title: c.title, price: c.price })));
-      }
+      const rawOrder = localStorage.getItem('current_order');
+      if (rawOrder) {
+        const parsed = JSON.parse(rawOrder);
+        setCartItems(order.items.map((c: any) => ({
+          id: c.id,
+          title: c.courseName, // backend trả về courseName
+          price: c.price
+        })));
+        }
+        setCartTotal(order.amount); // ✅ lấy tổng tiền từ backend
+
     } catch {}
 
     // Detect VNPay redirect result via query params
@@ -88,32 +95,51 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
     e.preventDefault();
     setIsProcessing(true);
     if (paymentMethod === 'ewallet') {
-      // Use VNPay flow
-      const orderId = 'ORDER_' + Date.now();
-      const pending = {
-        orderId,
-        items: cartItems.map(i => ({ id: i.id, title: i.title, price: i.price })),
-        total: cartTotal,
-        method: 'vnpay'
-      };
-      try { localStorage.setItem('pending_payment', JSON.stringify(pending)); } catch {}
-      try {
-        console.debug('[VNPay] Creating payment', { orderId, amount: cartTotal });
-        const resp = await createVnpayPayment({
-          orderId,
-          amount: cartTotal,
-          ipAddress: '127.0.0.1'
-        });
-        console.debug('[VNPay] Redirecting to', resp.paymentUrl);
-        window.location.href = resp.paymentUrl; // redirect to VNPay
-        return; // stop further simulation
-      } catch (err) {
-        console.error('[VNPay] create error', err);
+
+      const rawOrder = localStorage.getItem('current_order');
+      if (!rawOrder) {
+        alert("Không tìm thấy đơn hàng để thanh toán");
         setIsProcessing(false);
-        const msg = err instanceof Error ? err.message : 'Không thể tạo giao dịch VNPay';
-        alert(msg);
         return;
       }
+      const order = JSON.parse(rawOrder);
+
+      const pending = {
+        orderId: order.orderId,
+        items: order.items,
+        total: order.amount,
+        method: 'vnpay'
+      };
+//       const pending = {
+//         orderId,
+//         items: cartItems.map(i => ({ id: i.id, title: i.title, price: i.price })),
+//         total: cartTotal,
+//         method: 'vnpay'
+//       };
+      try { localStorage.setItem('pending_payment', JSON.stringify(pending)); } catch {}
+//       try {
+//         console.debug('[VNPay] Creating payment', { orderId, amount: cartTotal });
+//         const resp = await createVnpayPayment({
+//           orderId,
+//           amount: cartTotal,
+//           ipAddress: '127.0.0.1'
+//         });
+//         console.debug('[VNPay] Redirecting to', resp.paymentUrl);
+//         window.location.href = resp.paymentUrl; // redirect to VNPay
+//         return; // stop further simulation
+//       } catch (err) {
+//         console.error('[VNPay] create error', err);
+//         setIsProcessing(false);
+//         const msg = err instanceof Error ? err.message : 'Không thể tạo giao dịch VNPay';
+//         alert(msg);
+//         return;
+//       }
+        const resp = await createVnpayPayment({
+          orderId: order.orderId,
+          amount: order.amount,
+          ipAddress: '127.0.0.1'
+        });
+        window.location.href = resp.paymentUrl;
     }
 
     // Non-VNPay methods keep local simulation
