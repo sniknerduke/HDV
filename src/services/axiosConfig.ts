@@ -1,10 +1,12 @@
-import axios from "axios";
+import axios, { type AxiosRequestHeaders, type InternalAxiosRequestConfig } from "axios";
 
-// Hàm attach token JWT
-const attachToken = (config) => {
+// Hàm attach token JWT; đảm bảo headers không bị undefined trước khi gán
+const attachToken = (config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem("auth_token");
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    const headers = (config.headers ?? {}) as AxiosRequestHeaders;
+    headers.Authorization = `Bearer ${token}`;
+    config.headers = headers;
   }
   return config;
 };

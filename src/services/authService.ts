@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_USER_SERVICE_URL ?? "http://localhost:9090";
+const API_BASE = import.meta.env.VITE_USER_SERVICE_URL ?? "http://localhost:8080";
 
 interface RegisterPayload {
   username: string;
