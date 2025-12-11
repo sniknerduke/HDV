@@ -47,7 +47,7 @@ public class UserService {
         return userRepo.existsByEmail(email);
     }
 
-    // @PreAuthorize("hasRole('USER')")
+//    @PreAuthorize("hasRole('USER')")4
     public User registerUser(User user) {
         // 1. Đánh dấu tài khoản chưa kích hoạt
         user.setEnabled(false);
@@ -69,7 +69,7 @@ public class UserService {
     }
 
 
-    // @PreAuthorize("hasRole('USER')")
+//    @PreAuthorize("hasRole('USER')")
     @Transactional
     //@PostMapping("/verify-otp")
     public boolean verifyOtp(@RequestParam String email, @RequestParam String code) {
@@ -109,18 +109,6 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
         user.setUsername(dto.getUsername());
-        user.setPhone(dto.getPhone());
-        user.setAddress(dto.getAddress());
-        if (dto.getDateOfBirth() != null && !dto.getDateOfBirth().isBlank()) {
-            try {
-                user.setDateOfBirth(java.time.LocalDate.parse(dto.getDateOfBirth()));
-            } catch (java.time.format.DateTimeParseException ex) {
-                throw new IllegalArgumentException("Định dạng ngày sinh không hợp lệ. Vui lòng dùng yyyy-MM-dd", ex);
-            }
-        } else {
-            user.setDateOfBirth(null);
-        }
-        user.setBio(dto.getBio());
 
         // Convert String -> Enum
         if (dto.getRole() != null) {

@@ -190,7 +190,7 @@ export async function getCourses(token: string): Promise<Course[]> {
 }
 
 export async function fetchPublicCourses(): Promise<Course[]> {
-  const response = await fetch(`${COURSE_API_BASE}/api/courses/public/list`);
+  const response = await fetch(`${COURSE_API_BASE}/api/courses/list`);
   const payload = await handleApiResponse<BackendCourse[]>(response);
   const stored = readStorage();
   const mapped = payload.map((item, idx) => {

@@ -5,38 +5,67 @@ import com.example.onlineCourses.model.CartItem;
 import com.example.onlineCourses.model.Order;
 import com.example.onlineCourses.repository.OrderRepository;
 import com.example.onlineCourses.service.CartService;
+import com.example.onlineCourses.service.OrderService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/orders")
-@CrossOrigin(origins = "http://localhost:3000") // cho phép React gọi
+//@CrossOrigin(origins = "http://localhost:3000") // cho phép React gọi
 public class OrderController {
 
     private final OrderRepository orderRepo;
     private final CartService cartService;
+    private final OrderService orderService;
 
-    public OrderController(OrderRepository orderRepo, CartService cartService) {
+
+    public OrderController(OrderRepository orderRepo, CartService cartService, OrderService orderService) {
         this.orderRepo = orderRepo;
         this.cartService = cartService;
+        this.orderService = orderService;
     }
 
-    @PostMapping("/checkout")
-//    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Order> checkout(@RequestParam Long userId) {
-        Order order = cartService.checkout(userId);
-        return ResponseEntity.ok(order);
-    }
 
     @GetMapping("/{orderId}")
     public ResponseEntity<Order> getOrderByOrderId(@PathVariable String orderId) {
         return orderRepo.findByOrderId(orderId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+//    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/checkout")
+    public ResponseEntity<Order> checkout(
+            @RequestHeader("X-User-Id") Long userId
+    ) {
+        try {
+            Order order = orderService.checkout(userId);
+            return ResponseEntity.ok(order);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    //    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/update-status")
+    public ResponseEntity<Void> updateStatus(@RequestBody Map<String, Object> payload, @RequestHeader Map<String, String> headers) {
+        // Log headers
+        System.out.println("Request Headers: " + headers);
+        // Log payload
+        System.out.println("Request Body: " + payload);
+
+        String orderId = (String) payload.get("orderId");
+        String status = (String) payload.get("status");
+
+        orderService.updateStatus(orderId, status);
+
+        return ResponseEntity.ok().build();
     }
 
     //chưa sửa
@@ -60,12 +89,7 @@ public class OrderController {
 //
 //        return ResponseEntity.ok(order);
 //    }
-//    @PostMapping("/checkout")
-//    @PreAuthorize("hasRole('USER')")
-//    public ResponseEntity<Order> checkout(@RequestParam Long userId) {
-//        Order order = cartService.checkout(userId);
-//        return ResponseEntity.ok(order);
-//    }
+
 
 
     //chưa sửa
@@ -89,4 +113,3 @@ public class OrderController {
 
 
 }
-

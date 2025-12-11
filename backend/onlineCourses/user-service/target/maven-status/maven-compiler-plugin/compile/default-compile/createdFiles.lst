@@ -7,7 +7,6 @@ com\example\onlineCourses\repository\CartItemRepository.class
 com\example\onlineCourses\controller\CartController.class
 com\example\onlineCourses\DTO\OrderStatusUpdateRequest.class
 com\example\onlineCourses\repository\VerificationCodeRepository.class
-com\example\onlineCourses\controller\client\LessonClient.class
 com\example\onlineCourses\DTO\CartItemDTO.class
 com\example\onlineCourses\model\Order.class
 com\example\onlineCourses\DTO\UserDTO.class

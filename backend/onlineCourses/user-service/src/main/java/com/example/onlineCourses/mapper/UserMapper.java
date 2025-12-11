@@ -12,12 +12,6 @@ public class UserMapper {
         if (user.getRole() != null) {
             dto.setRole(user.getRole().name()); // convert enum -> String
         }
-        dto.setPhone(user.getPhone());
-        dto.setAddress(user.getAddress());
-        if (user.getDateOfBirth() != null) {
-            dto.setDateOfBirth(user.getDateOfBirth().toString());
-        }
-        dto.setBio(user.getBio());
         return dto;
     }
 }

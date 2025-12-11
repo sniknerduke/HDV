@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/orders")
-@CrossOrigin(origins = "http://localhost:3000")
+//@CrossOrigin(origins = "http://localhost:3000")
 public class OrderPaymentController {
 
     private final OrderRepository orderRepo;
@@ -72,17 +72,7 @@ public class OrderPaymentController {
 //        }
 //    }
 
-//    @GetMapping("/vnpay/return")
-//    public ResponseEntity<String> handleReturn(@RequestParam Map<String, String> params) {
-//        String responseCode = params.get("vnp_ResponseCode");
-//        String txnRef = params.get("vnp_TxnRef");
-//
-//        if ("00".equals(responseCode)) {
-//            return ResponseEntity.ok("Thanh toán thành công cho đơn hàng " + txnRef);
-//        } else {
-//            return ResponseEntity.ok("Thanh toán thất bại cho đơn hàng " + txnRef);
-//        }
-//    }
+
 
 }
 

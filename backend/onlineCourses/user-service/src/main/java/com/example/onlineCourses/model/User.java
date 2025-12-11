@@ -5,7 +5,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 
@@ -20,11 +19,6 @@ public class User implements UserDetails{
     private String email;
     private String password;
     private boolean enabled = false; //lien quan den xac thuc
-    private String phone;
-    private String address;
-    private LocalDate dateOfBirth;
-    @Column(length = 1000)
-    private String bio;
 
     public enum Role {
         USER, STAFF, MANAGER, ADMIN    }
@@ -62,39 +56,6 @@ public class User implements UserDetails{
 //
     public void setPassword(String password) { this.password = password; }
 //
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
-
-    public String getBio() {
-        return bio;
-    }
-
-    public void setBio(String bio) {
-        this.bio = bio;
-    }
-
 //
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
 //

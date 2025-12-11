@@ -15,11 +15,12 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/cart")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
+//@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class CartController {
 
     @Autowired
@@ -32,46 +33,75 @@ public class CartController {
 
     // Lấy toàn bộ giỏ hàng của user (items + tổng tiền)
     @GetMapping
-    public ResponseEntity<CartResponse> getCart(@RequestParam Long userId) {
+    public ResponseEntity<CartResponse> getCart(
+            @RequestHeader("X-User-Id") Long userId
+    ) {
         CartResponse response = cartService.getCart(userId);
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('USER')")
-    @PostMapping("/add-to-cart")
-    public ResponseEntity<?> addToCart(
-            @RequestParam Long userId,
-            @RequestParam Long courseId
-    ) {
+//    @GetMapping
+//    public ResponseEntity<CartResponse> getCart(@RequestParam Long userId) {
+//        CartResponse response = cartService.getCart(userId);
+//        return ResponseEntity.ok(response);
+//    }
 
+//    @PreAuthorize("hasRole('USER')")
+//    @PostMapping("/add-to-cart")
+//    public ResponseEntity<?> addToCart(
+//            @RequestParam Long userId,
+//            @RequestParam Long courseId
+//    ) {
+//
+//        cartService.addToCart(userId, courseId);
+//        return ResponseEntity.ok("Added");
+//    }
+
+
+
+    @PostMapping("/add-to-cart/{courseId}")
+    public ResponseEntity<?> addToCart(
+            @PathVariable Long courseId,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
         cartService.addToCart(userId, courseId);
-        return ResponseEntity.ok("Added");
+        return ResponseEntity.ok(Map.of("message", "Added", "userId", userId, "courseId", courseId));
     }
 
-    @PreAuthorize("hasRole('USER')")
-    @DeleteMapping("/{courseId}")
+    //    @PreAuthorize("hasRole('USER')")
+    @DeleteMapping("/{cartItemId}")
     public ResponseEntity<?> removeItem(
-            @PathVariable Long courseId,
-            @RequestParam Long userId) {
+            @PathVariable Long cartItemId
+            ) {
 
-        cartService.removeItem(courseId, userId);
+        cartService.removeItem(cartItemId);
         return ResponseEntity.ok("Removed");
     }
 
-    @PreAuthorize("hasRole('USER')")
+//    //    @PreAuthorize("hasRole('USER')")
+//    @DeleteMapping("/{courseId}")
+//    public ResponseEntity<?> removeItem(
+//            @PathVariable Long courseId,
+//            @RequestParam Long userId) {
+//
+//        cartService.removeItem(courseId, userId);
+//        return ResponseEntity.ok("Removed");
+//    }
+
+//    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/clear")
     public ResponseEntity<?> clearCart(@RequestParam Long userId) {
         cartService.clearCart(userId);
         return ResponseEntity.ok("Cleared");
     }
 
-    @PreAuthorize("hasRole('USER')")
+//    @PreAuthorize("hasRole('USER')")
     @PostMapping("/checkout")
     public Order checkout(@RequestParam Long userId) {
         return cartService.checkout(userId);
     }
 
-    @PreAuthorize("hasRole('USER')")
+//    @PreAuthorize("hasRole('USER')")
     @GetMapping("/total")
     public long getTotal(@RequestParam Long userId) {
         return cartService.calculateTotal(userId);
@@ -144,42 +174,8 @@ public class CartController {
 //        }
     }
 
-//    @PostMapping("/add-to-cart")
-//    @PreAuthorize("hasRole('USER')")
-//    public ResponseEntity<String> addCourseToCart(@RequestParam Long courseId) {
-//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        System.out.println("Auth: " + auth);
-//
-////        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        String username = auth.getName();
-//        Long userId = userService.findIdByUsername(username);
-//        cartService.addCourseToCart(userId, courseId);
-//        return ResponseEntity.ok("Course added to cart");
-//    }
 
 
-//    @DeleteMapping("/clear")
-//    @PreAuthorize("hasRole('USER')")
-//    public ResponseEntity<String> clearCart(@RequestParam Long userId) {
-//        cartService.clearCart(userId);
-//        return ResponseEntity.ok("Cart cleared");
-//    }
-
-//    @PostMapping("/checkout")
-//    @PreAuthorize("hasRole('USER')")
-////    public ResponseEntity<Order> checkout(@RequestParam Long userId) {
-//    public ResponseEntity<Order> checkout() {
-//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        String username = auth.getName();
-//        Long userId = userService.findIdByUsername(username);
-//        Order order = cartService.checkout(userId);
-//        return ResponseEntity.ok(order);
-//    }
-
-//    @GetMapping("/total")
-//    public ResponseEntity<Long> getCartTotal(@RequestParam Long userId) {
-//        return ResponseEntity.ok(cartService.getCartTotal(userId));
-//    }
 
 
 }

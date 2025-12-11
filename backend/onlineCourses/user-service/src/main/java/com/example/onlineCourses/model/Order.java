@@ -1,8 +1,11 @@
 package com.example.onlineCourses.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -15,6 +18,11 @@ public class Order {
     private Long amount;    // VND
     private String status;  // PENDING, PAID, FAILED
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private List<OrderItem> items = new ArrayList<>();
+
 
     @PrePersist
     public void prePersist() {
@@ -74,5 +82,12 @@ public class Order {
         this.id = id;
     }
 // Getters & Setters
-    // ...
+
+    public List<OrderItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<OrderItem> items) {
+        this.items = items;
+    }
 }

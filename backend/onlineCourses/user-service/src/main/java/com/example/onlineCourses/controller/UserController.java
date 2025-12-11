@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:3000")
+//@CrossOrigin(origins = "http://localhost:3000")
 public class UserController {
 
     @Autowired
@@ -56,7 +57,18 @@ public class UserController {
             boolean result = userService.verifyOtp(email, code);
             if (result) {
                 User user = userService.findByEmail(email);
-                String token = jwtService.generateToken(user);
+//                String token = jwtService.generateToken(user);
+//                UserDTO userDTO = UserMapper.toDTO(user);
+                // Build UserDetails từ entity User
+                UserDetails userDetails = org.springframework.security.core.userdetails.User
+                        .withUsername(user.getUsername())
+                        .password(user.getPassword())
+                        .roles(user.getRole().name())
+                        .build();
+
+                // Sinh token có cả roles và id
+                String token = jwtService.generateToken(userDetails, user.getId());
+
                 UserDTO userDTO = UserMapper.toDTO(user);
 
                 return ResponseEntity.ok(Map.of(
@@ -77,13 +89,30 @@ public class UserController {
         try {
             User user = userService.login(loginDTO.getEmail(), loginDTO.getPassword());
 
-            String token = jwtService.generateToken(user); // sinh JWT token
+            UserDetails userDetails = org.springframework.security.core.userdetails.User
+                    .withUsername(user.getUsername())
+                    .password(user.getPassword())
+                    .roles(user.getRole().name())
+                    .build();
+
+            String token = jwtService.generateToken(userDetails, user.getId());
+
             UserDTO userDTO = UserMapper.toDTO(user);
 
             return ResponseEntity.ok(Map.of(
                     "token", token,
                     "user", userDTO
             ));
+
+//            User user = userService.login(loginDTO.getEmail(), loginDTO.getPassword());
+//
+//            String token = jwtService.generateToken(user); // sinh JWT token
+//            UserDTO userDTO = UserMapper.toDTO(user);
+//
+//            return ResponseEntity.ok(Map.of(
+//                    "token", token,
+//                    "user", userDTO
+//            ));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
