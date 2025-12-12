@@ -10,10 +10,10 @@ import org.springframework.cloud.openfeign.FeignClient;
 //@SpringBootApplication
 @EnableDiscoveryClient
 @SpringBootApplication
-public class OnlineCoursesApplication {
+public class UserApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(OnlineCoursesApplication.class, args);
+		SpringApplication.run(UserApplication.class, args);
 	}
 
 }

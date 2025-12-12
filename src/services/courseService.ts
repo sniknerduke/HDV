@@ -174,7 +174,7 @@ const handleApiResponse = async <T>(response: Response): Promise<T> => {
 };
 
 export async function getCourses(token: string): Promise<Course[]> {
-  const response = await fetch(`${COURSE_API_BASE}/api/courses/list`, {
+  const response = await fetch(`${COURSE_API_BASE}/api/courses/public/list`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -190,7 +190,7 @@ export async function getCourses(token: string): Promise<Course[]> {
 }
 
 export async function fetchPublicCourses(): Promise<Course[]> {
-  const response = await fetch(`${COURSE_API_BASE}/api/courses/list`);
+  const response = await fetch(`${COURSE_API_BASE}/api/courses/public/list`);
   const payload = await handleApiResponse<BackendCourse[]>(response);
   const stored = readStorage();
   const mapped = payload.map((item, idx) => {

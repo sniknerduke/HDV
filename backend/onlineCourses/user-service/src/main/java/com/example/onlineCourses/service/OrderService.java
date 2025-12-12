@@ -75,18 +75,34 @@ public class OrderService {
         return savedOrder;
     }
 
-//    public void updateStatus(Long id, String status) {
-//        Order order = orderRepo.findById(id)
-//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
-//        order.setStatus(status);
-//        orderRepo.save(order);
-//    }
-
     public void updateStatus(String orderId, String status) {
         Order order = orderRepo.findByOrderId(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
         order.setStatus(status);
         orderRepo.save(order);
     }
+
+    public List<Order> getAllOrders() {
+        return orderRepo.findAll();
+    }
+
+    public Order getOrderById(Long id) {
+        return orderRepo.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+    }
+
+    public Order getOrderByOrderId(String orderId) {
+        return orderRepo.findByOrderId(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+    }
+
+    public void deleteOrder(Long id) {
+        if (orderRepo.existsById(id)) {
+            orderRepo.deleteById(id);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found");
+        }
+    }
+
 
 }

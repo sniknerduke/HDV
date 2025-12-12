@@ -5,6 +5,11 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/backend/onlineCourses/courses-service/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/onlineCourses/user-service/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/payment/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/onlineCourses/lesson-service/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/onlineCourses/eureka-server/pom.xml" />
+        <option value="$PROJECT_DIR$/backend/onlineCourses/api-gateway/pom.xml" />
       </list>
     </option>
   </component>

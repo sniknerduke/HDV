@@ -1,4 +1,4 @@
-package com.example.onlineCourses.jwt;
+package com.example.api_gateway;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -18,26 +18,21 @@ import java.util.stream.Collectors;
 public class JwtService {
     private final String SECRET_KEY = "mysuperlongsecretkeythatismorethan32characterslong"; // orthay bằng private final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // Sinh token có cả roles và id
-    public String generateToken(UserDetails userDetails, Long userId) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", userDetails.getAuthorities()
-                .stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList()));
-        claims.put("id", userId);
+//    public String generateToken(User user) {
+//        Map<String, Object> claims = new HashMap<>();
+//        claims.put("roles", List.of(user.getRole().name())); // hoặc ROLE_USER
+//        claims.put("id", user.getId()); // thêm userId vào claims
+//
+//        return Jwts.builder()
+//                .setClaims(claims)
+//                .setSubject(user.getUsername()) // subject là username
+//                .setIssuedAt(new Date(System.currentTimeMillis()))
+//                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
+//                .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
+//                .compact();
+//    }
 
-        return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(userDetails.getUsername())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1h
-//                .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()))
-                .signWith(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()), SignatureAlgorithm.HS256)
-
-                .compact();
-    }
-//    public String generateToken(UserDetails userDetails) {
+//    public String generateToken(UserDetails userDetails, Long userId) {
 ////        Map<String, Object> claims = new HashMap<>();
 ////        claims.put("roles", userDetails.getAuthorities()
 ////                .stream()
@@ -49,6 +44,8 @@ public class JwtService {
 //                .stream()
 //                .map(GrantedAuthority::getAuthority) // sẽ là ROLE_USER, ROLE_ADMIN...
 //                .collect(Collectors.toList()));
+//        claims.put("id", userId); // thêm userId vào claims
+//
 //        return Jwts.builder()
 //                .setClaims(claims) // thêm claims vào token
 //                .setSubject(userDetails.getUsername())
@@ -58,15 +55,6 @@ public class JwtService {
 //                .compact();
 //    }
 
-    public Long extractUserId(String token) {
-        var claims = Jwts.parserBuilder()
-                .setSigningKey(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()))
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-        return claims.get("id", Long.class);
-    }
-
     public String extractUsername(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()))
@@ -74,6 +62,15 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    public Long extractUserId(String token) {
+        var claims = Jwts.parserBuilder()
+                .setSigningKey(Keys.hmacShaKeyFor(SECRET_KEY.getBytes()))
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("id", Long.class);
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
