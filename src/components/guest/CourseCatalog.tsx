@@ -6,6 +6,8 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Search, Star, Users, Clock } from 'lucide-react';
 import { Course as SvcCourse, fetchCoursesForCatalog, fetchPublicCourses, getCachedCourses } from '../../services/courseService';
+import { addToCart, CartItem } from '../../services/cartService';
+
 
 const fallbackImages = [
   'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop',
@@ -226,7 +228,7 @@ export default function CourseCatalog({ onCourseSelect, userRole = null, onAddTo
                     className="w-full"
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (onAddToCart) onAddToCart(course); else toast.success('Đã thêm vào giỏ hàng');
+                      if (onAddToCart) addToCart(course.id); else toast.success('Đã thêm vào giỏ hàng');
                     }}
                   >
                     Thêm vào giỏ hàng

@@ -9,7 +9,7 @@ public class UserCourse {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(name = "order_id", nullable = false)
-    private Long orderId; // foreign key tới Order.id
+    private String orderId; // foreign key tới Order.orderId
 
     @Column(name = "user_id", nullable = false)// ví dụ ORD-20251115-001
     private Long userId;
@@ -35,11 +35,11 @@ public class UserCourse {
         this.id = id;
     }
 
-    public Long getOrderId() {
+    public String getOrderId() {
         return orderId;
     }
 
-    public void setOrderId(Long orderId) {
+    public void setOrderId(String orderId) {
         this.orderId = orderId;
     }
 

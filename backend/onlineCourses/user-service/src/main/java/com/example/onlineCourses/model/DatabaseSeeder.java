@@ -13,7 +13,8 @@ import java.util.concurrent.TimeUnit;
 // Import các Entity Order và OrderItem của bạn
 
 @Component
-public class DatabaseSeeder implements CommandLineRunner {
+//public class DatabaseSeeder implements CommandLineRunner {
+public class DatabaseSeeder{
 
     private final EntityManager entityManager;
     private final Faker faker = new Faker();
@@ -29,26 +30,26 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.entityManager = entityManager;
         this.passwordEncoder = passwordEncoder;
     }
-
-    @Override
-    @Transactional // Đảm bảo toàn bộ quá trình là 1 transaction
-    public void run(String... args) throws Exception {
-        // Chỉ chạy seeding khi DB trống (Tùy chọn)
-//        Long count = (Long) entityManager.createQuery("SELECT COUNT(o) FROM Order o").getSingleResult();
-//        if (count > 0) {
-//            System.out.println("Cơ sở dữ liệu đã có dữ liệu. Bỏ qua Seeding.");
-//            return;
-//        }
-
-        System.out.println("--- Bắt đầu Seeding Dữ liệu Demo ---");
-
-        cleanUpOldData(); // Bắt buộc phải chạy trước
-        // 1. Chạy Seeding User trước
-        seedUsers();
-        seedOrdersAndOrderItems();
-
-        System.out.println("--- Seeding Hoàn tất! Đã tạo " + NUMBER_OF_ORDERS + " đơn hàng ---");
-    }
+ //chạy mỗi lần run
+//    @Override
+//    @Transactional // Đảm bảo toàn bộ quá trình là 1 transaction
+//    public void run(String... args) throws Exception {
+//        // Chỉ chạy seeding khi DB trống (Tùy chọn)
+////        Long count = (Long) entityManager.createQuery("SELECT COUNT(o) FROM Order o").getSingleResult();
+////        if (count > 0) {
+////            System.out.println("Cơ sở dữ liệu đã có dữ liệu. Bỏ qua Seeding.");
+////            return;
+////        }
+//
+//        System.out.println("--- Bắt đầu Seeding Dữ liệu Demo ---");
+//
+//        cleanUpOldData(); // Bắt buộc phải chạy trước
+//        // 1. Chạy Seeding User trước
+//        seedUsers();
+//        seedOrdersAndOrderItems();
+//
+//        System.out.println("--- Seeding Hoàn tất! Đã tạo " + NUMBER_OF_ORDERS + " đơn hàng ---");
+//    }
 //...
 // ... tiếp tục trong lớp DatabaseSeeder
     private void cleanUpOldData() {

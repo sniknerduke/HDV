@@ -8,6 +8,7 @@ import com.example.onlineCourses.model.Order;
 import com.example.onlineCourses.model.OrderItem;
 import com.example.onlineCourses.model.User;
 import com.example.onlineCourses.repository.CartItemRepository;
+import com.example.onlineCourses.repository.OrderItemRepository;
 import com.example.onlineCourses.repository.OrderRepository;
 import com.example.onlineCourses.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,8 +29,15 @@ public class OrderService {
     private UserRepository userRepo;
     @Autowired
     private CartItemRepository cartItemRepo;
+    private final OrderItemRepository orderItemRepository;
+    private final UserCourseService userCourseService;
     @Autowired
     private CourseClient courseClient;
+
+    public OrderService(OrderItemRepository orderItemRepository, UserCourseService userCourseService) {
+        this.orderItemRepository = orderItemRepository;
+        this.userCourseService = userCourseService;
+    }
     // FeignClient dùng để gọi sang Course Service
 
     public Order checkout(Long userId) {
@@ -80,6 +88,14 @@ public class OrderService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
         order.setStatus(status);
         orderRepo.save(order);
+
+        // Nếu thanh toán thành công → tạo UserCourse
+        if ("SUCCESS".equalsIgnoreCase(status)) {
+            List<OrderItem> items = orderItemRepository.findByOrderId(order.getId());
+            for (OrderItem item : items) {
+                userCourseService.createUserCourse(order.getUserId(), item.getCourseId(), orderId);
+            }
+        }
     }
 
     public List<Order> getAllOrders() {

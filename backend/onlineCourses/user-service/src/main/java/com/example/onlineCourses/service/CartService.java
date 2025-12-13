@@ -75,7 +75,7 @@ public class CartService {
         return new CartResponse(itemDtos, total);
     }
 
-    public void addToCart(Long userId, Long courseId) {
+    public CartItem addToCart(Long userId, Long courseId) {
 
         // Kiểm tra cart item đã tồn tại?
         Optional<CartItem> existed =
@@ -85,7 +85,7 @@ public class CartService {
             CartItem item = existed.get();
 //            item.setQuantity(item.getQuantity() + quantity);
             cartItemRepository.save(item);
-            return;
+            return item;
         }
 
         // Chưa có → thêm mới
@@ -95,6 +95,7 @@ public class CartService {
 //        newItem.setQuantity(quantity);
 
         cartItemRepository.save(newItem);
+        return newItem;
     }
 
     public void removeItem(Long cartItemId) {

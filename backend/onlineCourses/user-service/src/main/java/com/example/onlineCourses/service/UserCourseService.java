@@ -29,5 +29,27 @@ public class UserCourseService {
         }
         return null; // chưa có quyền
     }
+
+    public UserCourseDto createUserCourse(Long userId, Long courseId, String orderId) {
+        // Kiểm tra đã tồn tại chưa
+        Optional<UserCourse> existing = userCourseRepository.findByUserIdAndCourseId(userId, courseId);
+        if (existing.isPresent()) {
+            UserCourse uc = existing.get();
+            return new UserCourseDto(uc.getUserId(), uc.getCourseId(), uc.getStatus());
+        }
+
+        // Tạo mới
+        UserCourse uc = new UserCourse();
+        uc.setUserId(userId);
+        uc.setCourseId(courseId);
+        uc.setOrderId(orderId);       // bắt buộc set vì nullable=false
+        uc.setStatus("ENROLLED");     // hoặc trạng thái mặc định
+
+        UserCourse saved = userCourseRepository.save(uc);
+
+        return new UserCourseDto(saved.getUserId(), saved.getCourseId(), saved.getStatus());
+    }
+
+
 }
 

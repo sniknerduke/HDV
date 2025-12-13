@@ -46,7 +46,6 @@ public class SecurityConfig {
                                         "/error"
                                 )
                                 .permitAll()
-//                        .requestMatchers(HttpMethod.POST, "/api/orders/update-status**").permitAll()
 
                                 .anyRequest().authenticated()
                 );

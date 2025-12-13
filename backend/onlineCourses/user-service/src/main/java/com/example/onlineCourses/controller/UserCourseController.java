@@ -4,10 +4,7 @@ import com.example.onlineCourses.DTO.UserCourseDto;
 import com.example.onlineCourses.service.UserCourseService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/user-courses")
@@ -33,5 +30,21 @@ public class UserCourseController {
 
         return ResponseEntity.ok(result);
     }
+
+    @PostMapping("/create")
+    public ResponseEntity<UserCourseDto> createUserCourse(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam Long courseId,
+            @RequestParam String orderId) {
+
+        UserCourseDto created = userCourseService.createUserCourse(userId, courseId, orderId);
+
+        if (created == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
 }
 

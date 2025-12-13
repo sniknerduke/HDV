@@ -16,8 +16,8 @@ export async function getCart(): Promise<{ items: CartItem[], totalPrice: number
 
 
 // Thêm vào giỏ hàng
-export async function addToCart(userId: number, courseId: number): Promise<CartItem[]> {
-  const res = await api.post(`/cart/add-to-cart?userId=${userId}&courseId=${courseId}`);
+export async function addToCart( courseId: number): Promise<CartItem> {
+  const res = await api.post(`/cart/add-to-cart/${courseId}`);
 //    = await userApi.get(`/cart?userId=${userId}`);
 //   return res.data.items;
   return res.data;

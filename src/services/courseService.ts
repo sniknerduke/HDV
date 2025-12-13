@@ -109,7 +109,8 @@ const mapBackendCourse = (input: BackendCourse, existing?: Course, extras?: Part
   const priceValueRaw = typeof input.price === 'number' ? input.price : Number(input.price ?? 0);
   const priceValue = Number.isFinite(priceValueRaw) ? priceValueRaw : 0;
   const durationRaw = typeof input.duration === 'number' ? input.duration : Number(input.duration ?? 0);
-  const durationFormatted = extras?.duration ?? existing?.duration ?? (Number.isFinite(durationRaw) && durationRaw > 0 ? formatDuration(durationRaw) : '');
+//   const durationFormatted = extras?.duration ?? existing?.duration ?? (Number.isFinite(durationRaw) && durationRaw > 0 ? formatDuration(durationRaw) : '');
+  const durationFormatted = (Number.isFinite(durationRaw) && durationRaw > 0 ? formatDuration(durationRaw) : '');
 
   return {
     id: input.id,
@@ -118,8 +119,10 @@ const mapBackendCourse = (input: BackendCourse, existing?: Course, extras?: Part
     description: extras?.description ?? input.description ?? existing?.description ?? '',
     category: extras?.category ?? existing?.category ?? DEFAULT_CATEGORY,
     level: extras?.level ?? existing?.level ?? DEFAULT_LEVEL,
-    price: extras?.price ?? existing?.price ?? priceValue,
-    duration: durationFormatted,
+//     price: extras?.price ?? existing?.price ?? priceValue,
+    price: extras?.price ?? priceValue,            // luôn ưu tiên API
+    duration: extras?.duration ?? durationFormatted, // luôn ưu tiên API
+//     duration: durationFormatted,
     students: extras?.students ?? existing?.students ?? 0,
     status: extras?.status ?? existing?.status ?? DEFAULT_STATUS,
     sections: existing?.sections,
@@ -174,7 +177,7 @@ const handleApiResponse = async <T>(response: Response): Promise<T> => {
 };
 
 export async function getCourses(token: string): Promise<Course[]> {
-  const response = await fetch(`${COURSE_API_BASE}/api/courses/public/list`, {
+  const response = await fetch(`${COURSE_API_BASE}/api/courses/list`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

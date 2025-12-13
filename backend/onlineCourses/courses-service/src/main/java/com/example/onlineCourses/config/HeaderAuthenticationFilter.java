@@ -39,7 +39,9 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        log.info(">>> TOKEN = " + request.getHeader("Tên-header-token"));
+//        log.info(">>> TOKEN = " + request.getHeader("Tên-header-token"));
+
+
 
 //        if (path.startsWith("/api/orders/update-status")) {
 //            filterChain.doFilter(request, response);
@@ -49,6 +51,8 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
         String userId = request.getHeader("X-User-Id");
         String rolesHeader = request.getHeader("X-User-Roles");
+        log.info(">>> X-User-Id = {}", userId);
+        log.info(">>> X-User-Roles = {}", rolesHeader);
 
         if (userId != null && rolesHeader != null) {
 

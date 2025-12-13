@@ -40,32 +40,17 @@ public class CartController {
         return ResponseEntity.ok(response);
     }
 
-//    @GetMapping
-//    public ResponseEntity<CartResponse> getCart(@RequestParam Long userId) {
-//        CartResponse response = cartService.getCart(userId);
-//        return ResponseEntity.ok(response);
-//    }
 
-//    @PreAuthorize("hasRole('USER')")
-//    @PostMapping("/add-to-cart")
-//    public ResponseEntity<?> addToCart(
-//            @RequestParam Long userId,
-//            @RequestParam Long courseId
-//    ) {
-//
-//        cartService.addToCart(userId, courseId);
-//        return ResponseEntity.ok("Added");
-//    }
-
-
-
+    //    @PreAuthorize("hasRole('USER')")
     @PostMapping("/add-to-cart/{courseId}")
-    public ResponseEntity<?> addToCart(
+    public ResponseEntity<CartItem> addToCart(
             @PathVariable Long courseId,
             @RequestHeader("X-User-Id") Long userId
     ) {
-        cartService.addToCart(userId, courseId);
-        return ResponseEntity.ok(Map.of("message", "Added", "userId", userId, "courseId", courseId));
+//        cartService.addToCart(userId, courseId);
+        CartItem item = cartService.addToCart(userId, courseId);
+//        return ResponseEntity.ok(Map.of("message", "Added", "userId", userId, "courseId", courseId));
+        return ResponseEntity.ok(item);
     }
 
     //    @PreAuthorize("hasRole('USER')")
