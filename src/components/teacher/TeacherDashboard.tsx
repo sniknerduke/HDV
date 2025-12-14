@@ -1,456 +1,399 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Badge } from '../ui/badge';
-import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from '../ui/chart';
-import { BookOpen, Users, FileText, TrendingUp, ShieldCheck, AlertCircle, Activity, DollarSign, FileBarChart, FileDown, PlayCircle } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { ChartContainer } from '../ui/chart'; 
+import { BookOpen, DollarSign, FileBarChart, FileDown } from 'lucide-react'; 
+import { useState, useEffect, useCallback, useMemo } from 'react'; 
+import { format } from 'date-fns'; 
+import axios from 'axios'; 
+
+// Cần đảm bảo path này đúng
+import { fetchCourseSales, calculateTotalSummary, CourseSalesResponse, TotalSummary } from '../../services/statisticApi'; 
+
 import {
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  Legend,
-  Tooltip,
-  ResponsiveContainer,
+    BarChart, 
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Cell, 
 } from 'recharts';
 
-interface TeacherDashboardProps {
-  onNavigate: (page: string) => void;
+
+// --- CẤU HÌNH & TYPES ---
+interface CourseResponse {
+    id: number; 
+    code: string;
+    title: string;
 }
 
-export default function TeacherDashboard({ onNavigate }: TeacherDashboardProps) {
-  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
-  const [isVerified, setIsVerified] = useState(false); // Mock verification status
-  // Filters & state for course statistics
-  const [selectedCourse, setSelectedCourse] = useState<string>('course-1');
-  const [range, setRange] = useState<string>('30d');
-  const [segment, setSegment] = useState<string>('all');
-  const [lesson, setLesson] = useState<string>('all');
-  const [compare, setCompare] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+const API_GATEWAY_URL = 'http://localhost:9090';
+const COURSES_API_URL = `${API_GATEWAY_URL}/api/courses/list`; 
 
-  // Mock courses
-  const courses = [
-    { id: 'course-1', name: 'Toán 12 - Ôn thi THPT' },
-    { id: 'course-2', name: 'Văn 11 - Nâng cao' },
-  ];
+const CHART_COLORS = [
+    '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#6f42c1', '#fd7e14', '#6610f2', '#20c997',
+];
 
-  // Mock data generators based on filters (simple deterministic samples)
-  const timePointsByRange: Record<string, string[]> = {
-    '7d': ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    '30d': ['W1', 'W2', 'W3', 'W4', 'W5'],
-    '90d': ['M1', 'M2', 'M3'],
-    ytd: ['Q1', 'Q2', 'Q3', 'Q4'],
-  };
+// --- HÀM HỖ TRỢ ---
+const formatCurrency = (amount: number | null | undefined) => {
+    if (amount === null || amount === undefined) return '0 ₫';
+    return new Intl.NumberFormat('vi-VN', { 
+        style: 'currency', 
+        currency: 'VND' 
+    }).format(amount);
+};
 
-  const seriesBase = useMemo(() => timePointsByRange[range] || [], [range]);
-
-  const enrollmentsData = useMemo(
-    () =>
-      seriesBase.map((label, i) => ({
-        label,
-        enroll: 80 + (i + (selectedCourse === 'course-2' ? 10 : 0)) * 15 - (segment === 'struggling' ? 20 : 0),
-      })),
-    [seriesBase, selectedCourse, segment]
-  );
-
-  const compareEnrollments = useMemo(
-    () =>
-      compare
-        ? seriesBase.map((label, i) => ({ label, enroll: enrollmentsData[i].enroll * 0.85 + 10 }))
-        : [],
-    [compare, seriesBase, enrollmentsData]
-  );
-
-  const viewsData = useMemo(
-    () =>
-      seriesBase.map((label, i) => ({ label, views: 300 + i * 40 + (lesson !== 'all' ? 20 : 0) })),
-    [seriesBase, lesson]
-  );
-
-  const completionPie = useMemo(() => {
-    const base = { completed: 62, inProgress: 28, dropped: 10 };
-    const adj = segment === 'struggling' ? { completed: -10, inProgress: +5, dropped: +5 } : { completed: 0, inProgress: 0, dropped: 0 };
-    return [
-      { label: 'Hoàn thành', value: Math.max(0, base.completed + adj.completed) },
-      { label: 'Đang học', value: Math.max(0, base.inProgress + adj.inProgress) },
-      { label: 'Bỏ dở', value: Math.max(0, base.dropped + adj.dropped) },
-    ];
-  }, [segment]);
-
-  const assignmentBar = useMemo(() => {
-    const labels = ['Bài 1', 'Bài 2', 'Bài 3', 'Bài 4'];
-    return labels.map((l, i) => ({
-      lesson: l,
-      assignment: 60 + i * 8 + (segment === 'all' ? 5 : 0),
-      test: 55 + i * 7 + (selectedCourse === 'course-2' ? 4 : 0),
-    }));
-  }, [segment, selectedCourse]);
-
-  const scores = useMemo(() => {
-    const avg = segment === 'struggling' ? 6.8 : 7.9;
-    return { avg, min: Math.max(3.5, avg - 3.1), max: Math.min(10, avg + 1.8) };
-  }, [segment]);
-
-  const totals = useMemo(() => {
-    const enrollTotal = enrollmentsData.reduce((a, b) => a + Math.max(0, b.enroll), 0);
-    const viewsTotal = viewsData.reduce((a, b) => a + b.views, 0);
-    const completed = completionPie.find((x) => x.label === 'Hoàn thành')?.value || 0;
-    const inProgress = completionPie.find((x) => x.label === 'Đang học')?.value || 0;
-    const completionRate = Math.round((completed / Math.max(1, completed + inProgress)) * 100);
-    const revenue = enrollTotal * 12000; // mock VND per enrollment
-    return { enrollTotal, viewsTotal, completionRate, revenue };
-  }, [enrollmentsData, viewsData, completionPie]);
-
-  const refresh = () => {
-    setLoading(true);
-    setError(null);
-    setTimeout(() => {
-      // 10% chance to mock an error
-      if (Math.random() < 0.1) {
-        setError('Lỗi tải dữ liệu. Vui lòng thử lại.');
-      }
-      setLoading(false);
-    }, 700);
-  };
-
-  // CSV export (Excel-friendly)
-  const exportCSV = () => {
-    const rows: string[] = [];
-    rows.push('Metric,Label,Value');
-    enrollmentsData.forEach((d) => rows.push(`Enrollments,${d.label},${d.enroll}`));
-    viewsData.forEach((d) => rows.push(`Views,${d.label},${d.views}`));
-    completionPie.forEach((d) => rows.push(`Completion,${d.label},${d.value}`));
-    assignmentBar.forEach((d) => rows.push(`Assignment,${d.lesson},${d.assignment}`));
-    assignmentBar.forEach((d) => rows.push(`Test,${d.lesson},${d.test}`));
-    rows.push(`Scores,Average,${scores.avg.toFixed(2)}`);
-    rows.push(`Scores,Min,${scores.min.toFixed(2)}`);
-    rows.push(`Scores,Max,${scores.max.toFixed(2)}`);
-    rows.push(`Summary,CompletionRate,${totals.completionRate}%`);
-    rows.push(`Summary,EnrollmentsTotal,${totals.enrollTotal}`);
-    rows.push(`Summary,ViewsTotal,${totals.viewsTotal}`);
-    rows.push(`Summary,Revenue,${totals.revenue}`);
-    const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `teacher-stats-${selectedCourse}-${range}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const exportPDF = () => {
-    alert('Xuất PDF (mock)');
-  };
-
-  return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1>Dashboard Giáo viên</h1>
-      </div>
+interface TeacherDashboardProps {
+    onNavigate: (page: string) => void;
+    token: string | null; 
+}
 
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Tổng khóa học</p>
-                <p className="text-3xl">2</p>
-              </div>
-              <BookOpen className="w-12 h-12 text-blue-600 opacity-20" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Tổng học sinh</p>
-                <p className="text-3xl">77</p>
-              </div>
-              <Users className="w-12 h-12 text-green-600 opacity-20" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Bài cần chấm</p>
-                <p className="text-3xl">15</p>
-              </div>
-              <FileText className="w-12 h-12 text-orange-600 opacity-20" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+export default function TeacherDashboard({ onNavigate, token }: TeacherDashboardProps) {
+    
+    // --- KHỞI TẠO DATE (JavaScript Date Object) ---
+    const today = new Date();
+    const defaultStartDateObj = new Date(today.getFullYear(), today.getMonth(), 1);
+    const defaultEndDateObj = today;
 
-      {/* Course Statistics Section */}
-      <div className="mt-10">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Thống kê khóa học</h2>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={refresh} disabled={loading} className="inline-flex items-center gap-2">
-              <FileBarChart className="w-4 h-4" /> {loading ? 'Đang tải...' : 'Tải lại'}
-            </Button>
-            <Button variant="outline" onClick={exportCSV} className="inline-flex items-center gap-2">
-              <FileDown className="w-4 h-4" /> Excel
-            </Button>
-            <Button variant="outline" onClick={exportPDF} className="inline-flex items-center gap-2">
-              <FileDown className="w-4 h-4" /> PDF
-            </Button>
-          </div>
-        </div>
+    const [startDateObj, setStartDateObj] = useState<Date>(defaultStartDateObj);
+    const [endDateObj, setEndDateObj] = useState<Date>(defaultEndDateObj);
+    
+    // State string cho input type="date"
+    const [startDateStr, setStartDateStr] = useState<string>(format(defaultStartDateObj, 'yyyy-MM-dd')); 
+    const [endDateStr, setEndDateStr] = useState<string>(format(defaultEndDateObj, 'yyyy-MM-dd'));   
+    
+    const [salesStats, setSalesStats] = useState<CourseSalesResponse[]>([]); 
+    const [courses, setCourses] = useState<CourseResponse[]>([]); 
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
 
-        {/* Filters */}
-        <Card className="mb-6">
-  <CardContent className="p-4">
-    {/* --- GIẢI THÍCH THAY ĐỔI ---
-      1. 'flex': Giữ layout là flexbox.
-      2. 'flex-wrap': Đây là chìa khóa. Nó cho phép các item tự động
-         "rớt" xuống hàng mới nếu hàng hiện tại không còn đủ chỗ.
-      3. 'items-center': Căn giữa các item theo chiều dọc.
-      4. 'gap-4': Giữ khoảng cách giữa các item.
-      
-      Chúng ta bỏ 'flex-col' và 'md:flex-row' để nó luôn là 'flex-row'
-      nhưng linh hoạt.
-    */}
-    <div className="flex flex-wrap items-center gap-4">
-      {/* --- GIẢI THÍCH THAY ĐỔI ---
-        1. 'flex-1': Cho phép item này "lớn lên" (grow) để lấp đầy
-           không gian trống trên hàng.
-        2. 'min-w-[180px]': (Quan trọng) Đặt độ rộng tối thiểu cho
-           mỗi bộ lọc. Khi trình duyệt thấy không gian hẹp hơn 180px,
-           nó sẽ đẩy item này xuống hàng mới (nhờ 'flex-wrap' ở trên).
-           Bạn có thể điều chỉnh 180px thành 200px, 220px... tùy ý.
+    // --- LOGIC TÍNH TOÁN TỔNG HỢP (useMemo) ---
+    const totalSummary = useMemo(() => calculateTotalSummary(salesStats), [salesStats]);
+
+    // --- HÀM LẤY DANH SÁCH KHÓA HỌC (useCallback) ---
+    const fetchAllCourses = useCallback(async () => {
+        if (!token) return;
+        try {
+            const response = await axios.get<CourseResponse[]>(COURSES_API_URL, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setCourses(response.data);
+        } catch (err: unknown) {
+            console.error("Lỗi khi tải danh sách khóa học:", err);
+        }
+    }, [token]); 
+
+    // --- HÀM THỰC HIỆN THỐNG KÊ (useCallback) ---
+    const executeStatistics = useCallback(async (start: Date, end: Date) => {
         
-        Chúng ta bỏ 'md:w-[20%]' để nó linh hoạt hơn theo không gian.
-      */}
-      <div className="flex-1 min-w-[180px]">
-        <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-          <SelectTrigger><SelectValue placeholder="Chọn khóa học" /></SelectTrigger>
-          <SelectContent>
-            {courses.map(c => (
-              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {/* Áp dụng tương tự cho các bộ lọc khác */}
-      <div className="flex-1 min-w-[180px]">
-        <Select value={range} onValueChange={setRange}>
-          <SelectTrigger><SelectValue placeholder="Khoảng thời gian" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="7d">7 ngày</SelectItem>
-            <SelectItem value="30d">30 ngày</SelectItem>
-            <SelectItem value="90d">90 ngày</SelectItem>
-            <SelectItem value="ytd">YTD</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="flex-1 min-w-[180px]">
-        <Select value={segment} onValueChange={setSegment}>
-          <SelectTrigger><SelectValue placeholder="Nhóm học viên" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="new">Mới</SelectItem>
-            <SelectItem value="returning">Quay lại</SelectItem>
-            <SelectItem value="struggling">Gặp khó khăn</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <div className="flex-1 min-w-[180px]">
-        <Select value={lesson} onValueChange={setLesson}>
-          <SelectTrigger><SelectValue placeholder="Bài học" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả bài</SelectItem>
-            <SelectItem value="1">Bài 1</SelectItem>
-            <SelectItem value="2">Bài 2</SelectItem>
-            <SelectItem value="3">Bài 3</SelectItem>
-            <SelectItem value="4">Bài 4</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {/* Đối với checkbox, chúng ta cũng có thể cho nó 'flex-1'
-        để nó cân bằng với các item khác, hoặc bỏ 'flex-1'
-        để nó chỉ chiếm vừa đủ không gian.
-        Ở đây tôi thêm 'whitespace-nowrap' để label không bị vỡ.
-      */}
-      <div className="flex items-center gap-2">
-        <input id="compare" type="checkbox" className="accent-gray-600" checked={compare} onChange={(e) => setCompare(e.target.checked)} />
-        <label htmlFor="compare" className="text-sm text-gray-700 whitespace-nowrap">
-          So sánh kỳ trước
-        </label>
-      </div>
-    </div>
-  </CardContent>
-</Card>
+        if (start > end) {
+            setError("Ngày bắt đầu không được sau ngày kết thúc.");
+            return;
+        }
+        // if (!token) {
+        //     setError("Vui lòng cung cấp JWT Token để tải dữ liệu thống kê.");
+        //     return;
+        // }
 
-        {error && (
-          <Card className="mb-6 border-red-300">
-            <CardContent className="p-4 text-red-600 flex items-center justify-between">
-              <span>{error}</span>
-              <Button size="sm" variant="outline" onClick={refresh}>Thử lại</Button>
-            </CardContent>
-          </Card>
-        )}
+        setLoading(true);
+        setError(null);
+        setSalesStats([]);
 
-        {/* KPI Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardContent className="pt-6 pl-6 pr-5 pb-5">
-              <div className="flex items-center justify-between ">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1 ">Doanh thu (ước tính)</p>
-                  <p className="text-2xl font-semibold">{totals.revenue.toLocaleString('vi-VN')} đ</p>
-                </div>
-                <DollarSign className="w-10 h-10 text-yellow-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 pl-6 pr-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Lượt đăng ký</p>
-                  <p className="text-2xl font-semibold">{totals.enrollTotal.toLocaleString()}</p>
-                </div>
-                <Users className="w-10 h-10 text-blue-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 pl-6 pr-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Tỷ lệ hoàn thành</p>
-                  <p className="text-2xl font-semibold">{totals.completionRate}%</p>
-                </div>
-                <TrendingUp className="w-10 h-10 text-green-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 pl-6 pr-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Điểm TB / Cao / Thấp</p>
-                  <p className="text-2xl font-semibold">{scores.avg.toFixed(1)} / {scores.max.toFixed(1)} / {scores.min.toFixed(1)}</p>
-                </div>
-                <Activity className="w-10 h-10 text-purple-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6 pl-6 pr-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Lượt xem video</p>
-                  <p className="text-2xl font-semibold">{totals.viewsTotal.toLocaleString()}</p>
-                </div>
-                <PlayCircle className="w-10 h-10 text-red-500 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        try {
+            const results = await fetchCourseSales(start, end);
+            setSalesStats(results); 
 
-        {/* Charts */}
-        {/* Row 1: Enrollments area + Completion pie */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle>Đăng ký theo thời gian</CardTitle></CardHeader>
-            <CardContent>
-              <ChartContainer className="h-64" config={{
-                enroll: { label: 'Đăng ký', color: 'hsl(221.2 83.2% 53.3%)' },
-                compare: { label: 'So sánh', color: 'hsl(24.6 95% 53.1%)' },
-              }}>
-                <AreaChart data={enrollmentsData} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="label" />
-                  <YAxis />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="enroll" stroke="var(--color-enroll)" fill="var(--color-enroll)" fillOpacity={0.15} />
-                </AreaChart>
-              </ChartContainer>
-              {compare && (
-                <div className="mt-3">
-                  <ChartContainer className="h-40" config={{ compare: { label: 'So sánh', color: 'hsl(24.6 95% 53.1%)' } }}>
-                    <LineChart data={compareEnrollments} margin={{ left: 12, right: 12 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f3f3" />
-                      <XAxis dataKey="label" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="enroll" stroke="var(--color-compare)" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ChartContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-2"><CardTitle>Tỷ lệ hoàn thành khóa học</CardTitle></CardHeader>
-            <CardContent>
-              <ChartContainer className="h-64" config={{
-                completed: { label: 'Hoàn thành', color: 'hsl(142.1 70.6% 45.3%)' },
-                progress: { label: 'Đang học', color: 'hsl(221.2 83.2% 53.3%)' },
-                dropped: { label: 'Bỏ dở', color: 'hsl(24.6 95% 53.1%)' },
-              }}>
-                <PieChart>
-                  <Pie data={completionPie} dataKey="value" nameKey="label" outerRadius={90} label>
-                    {completionPie.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={
-                        entry.label === 'Hoàn thành' ? 'var(--color-completed)'
-                        : entry.label === 'Đang học' ? 'var(--color-progress)'
-                        : 'var(--color-dropped)'
-                      } />
-                    ))}
-                  </Pie>
-                  <Legend />
-                  <Tooltip />
-                </PieChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Row 2: Views line + Assignment/Test bar */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <Card>
-            <CardHeader className="pb-2"><CardTitle>Lượt xem video theo thời gian</CardTitle></CardHeader>
-            <CardContent>
-              <ChartContainer className="h-64" config={{ views: { label: 'Lượt xem', color: 'hsl(0 84.2% 60.2%)' } }}>
-                <LineChart data={viewsData} margin={{ left: 12, right: 12 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="label" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="views" stroke="var(--color-views)" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          
-        </div>
-
+        } catch (err: any) { 
+            console.error("Lỗi khi tải thống kê doanh thu:", err);
+            setError(err.message || "Lỗi không xác định khi tải thống kê."); 
+            setSalesStats([]);
+        } finally {
+            setLoading(false);
+        }
+    }, []); 
+    
+    // --- EFFECT: Load data lần đầu ---
+    useEffect(() => {
+        // fetchAllCourses(); // Tạm thời bỏ qua nếu API khóa học cũng cần token
         
-      </div>
-    </div>
-  );
+        // 👇 GỌI LUÔN, KHÔNG CẦN CHECK TOKEN
+        executeStatistics(startDateObj, endDateObj);
+        
+    }, [executeStatistics]); // Bỏ các biến khác, chỉ giữ lại hàm execute
+
+    // --- HÀM XỬ LÝ DATE INPUT ---
+    const handleStartDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newDateStr = e.target.value;
+        setStartDateStr(newDateStr);
+        setStartDateObj(new Date(newDateStr));
+    };
+
+    const handleEndDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newDateStr = e.target.value;
+        setEndDateStr(newDateStr);
+        setEndDateObj(new Date(newDateStr));
+    };
+    
+    // --- HÀM EXPORT CSV (Đã sửa lỗi font & thêm tổng) ---
+     const exportCSV = () => {
+        if (salesStats.length === 0) return;
+        
+        const rows: string[] = [];
+        
+        // 1. Dòng tiêu đề
+        rows.push('Mã Khóa Học,Tên Khóa Học,Tổng Lượt Bán,Tổng Doanh Thu');
+        
+        // 2. Dòng dữ liệu chi tiết
+        salesStats.forEach(d => {
+            // Bao quanh chuỗi bằng ngoặc kép "" để tránh lỗi nếu tên có dấu phẩy
+            rows.push(`"${d.courseCode}","${d.courseTitle}",${d.totalSold},${d.totalRevenue}`);
+        });
+
+        // 3. Dòng TỔNG CỘNG (Mới thêm)
+        // Cấu trúc: "TỔNG CỘNG", "", Tổng Lượt Bán, Tổng Doanh Thu
+        rows.push(`"TỔNG CỘNG","",${totalSummary.totalSold},${totalSummary.totalRevenue}`);
+        
+        // 4. Tạo file với BOM (\uFEFF) để sửa lỗi phông chữ tiếng Việt trong Excel
+        const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `doanh-thu-${startDateStr}-${endDateStr}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    // --- RENDERING VÀ LAYOUT ---
+    return (
+        <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+            <h1 className="text-3xl font-extrabold text-gray-800 mb-8 border-b pb-2">
+                Dashboard Giảng Viên
+            </h1>
+
+            {/* --- CÁC THẺ KPI --- */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {/* ... (Tổng Khóa Học) ... */}
+                <Card className="shadow-lg rounded-xl border-t-4 border-blue-600 hover:scale-[1.01] transition-transform">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-gray-600 uppercase mb-1">Tổng khóa học</p>
+                            <p className="text-4xl font-bold text-gray-900">{courses.length}</p> 
+                        </div>
+                        <BookOpen className="w-10 h-10 text-blue-600 opacity-40" />
+                    </CardContent>
+                </Card>
+                
+                {/* Tổng Doanh Thu */}
+                <Card className="shadow-lg rounded-xl border-t-4 border-green-600 hover:scale-[1.01] transition-transform">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-gray-600 uppercase mb-1">Tổng Doanh Thu</p>
+                            <p className="text-3xl font-bold text-green-700">
+                                {loading ? '...' : formatCurrency(totalSummary.totalRevenue)}
+                            </p>
+                        </div>
+                        <DollarSign className="w-10 h-10 text-green-600 opacity-40" />
+                    </CardContent>
+                </Card>
+
+                {/* Tổng Lượt Bán */}
+                <Card className="shadow-lg rounded-xl border-t-4 border-orange-500 hover:scale-[1.01] transition-transform">
+                    <CardContent className="p-6 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-semibold text-gray-600 uppercase mb-1">Tổng Lượt Bán</p>
+                            <p className="text-4xl font-bold text-orange-600">
+                                {loading ? '...' : totalSummary.totalSold.toLocaleString('vi-VN')}
+                            </p>
+                        </div>
+                        <FileBarChart className="w-10 h-10 text-orange-600 opacity-40" />
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* --- BỘ LỌC & THAO TÁC --- */}
+            <Card className="shadow-lg rounded-xl mb-6">
+                <CardContent className="p-4 flex flex-wrap items-center justify-between gap-4">
+                    
+                    {/* Date Pickers */}
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-700">Từ ngày:</label>
+                            <input 
+                                type="date" 
+                                value={startDateStr} 
+                                onChange={handleStartDateChange} 
+                                className="border border-gray-300 p-2 rounded-lg"
+                            />
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                            <label className="text-sm font-medium text-gray-700">Đến ngày:</label>
+                            <input 
+                                type="date" 
+                                value={endDateStr} 
+                                onChange={handleEndDateChange} 
+                                className="border border-gray-300 p-2 rounded-lg"
+                            />
+                        </div>
+                    </div>
+                    
+                    {/* NÚT THỐNG KÊ & EXPORT */}
+                    <div className="flex items-center gap-3">
+                        <Button 
+                            onClick={() => executeStatistics(startDateObj, endDateObj)} 
+                            // disabled={loading || !token} 
+                            disabled={loading}
+                            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 shadow-md font-semibold"
+                        >
+                            {loading ? 'Đang thống kê...' : 'Thống kê'}
+                        </Button>
+                        
+                        <Button variant="outline" onClick={exportCSV} disabled={salesStats.length === 0}>
+                            <FileDown className="w-4 h-4 mr-2" /> Xuất Excel
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Hiển thị lỗi đã được cải tiến */}
+            {error && (
+                <div className="p-4 mb-6 text-red-700 bg-red-100 border border-red-400 rounded-lg font-medium">
+                    {/* HIỂN THỊ THÔNG BÁO LỖI CHI TIẾT TỪ API */}
+                    <span className="font-bold">LỖI: </span> {error}
+                </div>
+            )}
+            
+            {/* --- BIỂU ĐỒ & THÔNG TIN TỔNG QUAN --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* BIỂU ĐỒ (2/3 cột) */}
+                <Card className="shadow-lg rounded-xl lg:col-span-2">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-semibold">Lượt bán theo Khóa học</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 h-[400px]">
+                        {loading && <div className="flex items-center justify-center h-full text-gray-500">Đang tải biểu đồ...</div>}
+                        {!loading && salesStats.length === 0 && !error && (
+                            <div className="flex items-center justify-center h-full text-gray-500">Chưa có dữ liệu bán hàng trong kỳ này.</div>
+                        )}
+                        
+                        {!loading && salesStats.length > 0 && (
+                            <ChartContainer className="h-full w-full" config={{}}>
+                                <BarChart data={salesStats} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                    <XAxis 
+                                        dataKey="courseTitle" 
+                                        angle={-35} 
+                                        textAnchor="end" 
+                                        height={100} 
+                                        interval={0} 
+                                        style={{ fontSize: '12px' }}
+                                    />
+                                    <YAxis dataKey="totalSold" />
+                                    
+                                    <Tooltip 
+                                        content={({ payload, label }) => (
+                                            <Card className="p-3 shadow-xl border-gray-200 rounded-lg">
+                                                <p className="font-semibold text-sm text-gray-800">{label}</p>
+                                                <p className="text-blue-600 text-sm">Lượt Bán: <span className="font-bold">{payload?.[0]?.value?.toLocaleString('vi-VN')}</span></p>
+                                                <p className="text-green-600 text-sm">Doanh Thu: <span className="font-bold">{formatCurrency(payload?.[0]?.payload?.totalRevenue)}</span></p>
+                                            </Card>
+                                        )}
+                                    />
+                                    
+                                    <Bar dataKey="totalSold" name="Lượt Bán" radius={[4, 4, 0, 0]} >
+                                        {salesStats.map((entry, index) => (
+                                            <Cell 
+                                                key={`cell-${index}`} 
+                                                fill={CHART_COLORS[index % CHART_COLORS.length]} 
+                                            />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ChartContainer>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* THÔNG TIN TỔNG HỢP (1/3 cột) */}
+                <Card className="shadow-lg rounded-xl">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg font-semibold">Tóm tắt kết quả</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-4 h-[340px] flex flex-col justify-center">
+                        <div className="space-y-4">
+                            <div className="p-4 border border-green-200 rounded-lg bg-green-50">
+                                <p className="font-medium text-gray-700">Tổng Doanh Thu</p>
+                                <p className="font-bold text-2xl text-green-700">{formatCurrency(totalSummary.totalRevenue)}</p>
+                            </div>
+                            
+                            <div className="p-4 border border-blue-200 rounded-lg bg-blue-50">
+                                <p className="font-medium text-gray-700">Tổng Lượt Bán</p>
+                                <p className="font-bold text-2xl text-blue-700">{totalSummary.totalSold.toLocaleString('vi-VN')}</p>
+                            </div>
+                            
+                            <div className="p-4 border border-gray-200 rounded-lg bg-white">
+                                <p className="font-medium text-gray-700">Số Khóa Học Thống Kê</p>
+                                <p className="font-bold text-xl text-gray-800">{salesStats.length}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+            
+            {/* --- BẢNG HIỂN THỊ KẾT QUẢ THỐNG KÊ CHI TIẾT --- */}
+            <Card className="mt-6 shadow-lg rounded-xl">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-lg font-semibold">Bảng chi tiết bán hàng</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-4">
+                    {loading && <div className="p-6 text-center text-gray-500">Đang tải dữ liệu...</div>}
+                    
+                    {!loading && salesStats.length > 0 && (
+                        <div className="overflow-x-auto max-h-[500px] border border-gray-200 rounded-lg">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-100 sticky top-0 z-10">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">#</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Mã Khóa Học</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tên Khóa Học</th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Tổng Lượt Bán</th>
+                                        <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Tổng Doanh Thu</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {salesStats.map((item, index) => (
+                                        <tr key={item.courseId} className="hover:bg-blue-50 transition-colors">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{index + 1}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{item.courseCode}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">{item.courseTitle}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-blue-600">{item.totalSold.toLocaleString('vi-VN')}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-green-600">{formatCurrency(item.totalRevenue)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot className="bg-blue-100 sticky bottom-0 border-t-2 border-blue-300">
+                                    <tr>
+                                        <td colSpan={3} className="px-6 py-4 text-left text-sm font-bold text-gray-900 uppercase">TỔNG CỘNG</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-blue-700">
+                                            {totalSummary.totalSold.toLocaleString('vi-VN')}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-green-700">
+                                            {formatCurrency(totalSummary.totalRevenue)}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    )}
+                    {!loading && salesStats.length === 0 && !error && (
+                        <div className="p-6 text-center text-gray-500">Chưa có dữ liệu chi tiết bán hàng để hiển thị.</div>
+                    )}
+                </CardContent>
+            </Card>
+            
+        </div>
+    );
 }

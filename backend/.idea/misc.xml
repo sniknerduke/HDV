@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/onlineCourses/api-gateway/pom.xml" />
+        <option value="$PROJECT_DIR$/onlineCourses/courses-service/pom.xml" />
+        <option value="$PROJECT_DIR$/onlineCourses/eureka-server/pom.xml" />
+        <option value="$PROJECT_DIR$/onlineCourses/lesson-service/pom.xml" />
+        <option value="$PROJECT_DIR$/onlineCourses/user-service/pom.xml" />
+        <option value="$PROJECT_DIR$/onlineCourses/Service_thongke/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_24" default="true" project-jdk-name="24" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>

@@ -3,15 +3,18 @@ package com.example.onlineCourses.controller;
 import com.example.onlineCourses.DTO.OrderStatusUpdateRequest;
 import com.example.onlineCourses.model.CartItem;
 import com.example.onlineCourses.model.Order;
+import com.example.onlineCourses.repository.OrderItemRepository;
 import com.example.onlineCourses.repository.OrderRepository;
 import com.example.onlineCourses.service.CartService;
 import com.example.onlineCourses.service.OrderService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +89,20 @@ public class OrderController {
         return orderRepo.findAll();
     }
 
+    // dùng để thống kê
+    @Autowired // Hoặc thêm vào constructor
+    private OrderItemRepository orderItemRepository;
+    // Thêm API này để Service_thongke gọi
+    @GetMapping("/internal/stats")
+    public List<com.example.onlineCourses.DTO.SalesSummaryDTO> getSalesStats(
+            @RequestParam("start") String start, // Dạng String ISO hoặc format tùy ý
+            @RequestParam("end") String end) {
 
+        // Convert String sang LocalDateTime (Giả sử client gửi yyyy-MM-ddTHH:mm:ss)
+        LocalDateTime startDate = LocalDateTime.parse(start);
+        LocalDateTime endDate = LocalDateTime.parse(end);
 
+        return orderItemRepository.findSalesStatistics(startDate, endDate);
+    }
+    // hết
 }

@@ -58,8 +58,12 @@ public class SecurityConfig {
                                 "/api/users/verify-otp",
                                 "/api/orders/update-status",
                                 "/api/orders/update-status/**",
-                                "/error"
+                                "/error",
+                                // --- THÊM DÒNG NÀY ---
+                                "/api/orders/internal/stats"
+                                // ---------------------
                         )
+
                         .permitAll()
 //                        .requestMatchers(HttpMethod.POST, "/api/orders/update-status**").permitAll()
 
