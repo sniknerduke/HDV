@@ -10,8 +10,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 @RestController
-@RequestMapping("/payment/vnpay")
-@CrossOrigin(origins = "http://localhost:5173")
+@RequestMapping("/api/payment/vnpay")
 public class VnpayController {
 
     private final PaymentTransactionRepository repo;

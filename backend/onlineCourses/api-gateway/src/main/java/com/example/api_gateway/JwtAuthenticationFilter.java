@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 
 
 @Component
-@Order(-1)
+@Order(1)  // Run after CORS filter (which is typically order 0 or negative)
 public class JwtAuthenticationFilter implements GlobalFilter {
 
     private final JwtService jwtService;
@@ -31,8 +31,7 @@ public class JwtAuthenticationFilter implements GlobalFilter {
         ServerHttpRequest request = exchange.getRequest();
         // BỎ QUA NGAY TỪ ĐẦU NẾU LÀ PRELIGHT REQUEST
         if (request.getMethod() == HttpMethod.OPTIONS) {
-            exchange.getResponse().setStatusCode(HttpStatus.OK);
-            return exchange.getResponse().setComplete();
+            return chain.filter(exchange);
         }
         String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
@@ -44,11 +43,12 @@ public class JwtAuthenticationFilter implements GlobalFilter {
         if (request.getMethod() == HttpMethod.OPTIONS ||
                 path.contains("login") ||
                 path.contains("register") ||
-                path.contains("/vnpay/return") ||
+                path.contains("/vnpay") ||
+                path.contains("/api/payment") ||
                 path.contains("/api/orders/update-status") ||
                 path.contains("/api/courses/public/list") ||
                 path.contains("/api/statistics") ||
-                path.contains("verify-otp") // <--- THÊM MỚI Ở ĐÂY
+                path.contains("verify-otp")
         ) {
             return chain.filter(exchange);
         }
