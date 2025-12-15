@@ -30,7 +30,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String header = headerNames.nextElement();
-            log.info("HEADER = " + header + " : " + request.getHeader(header));
+            // log.info("HEADER = " + header + " : " + request.getHeader(header));
         }
 
         String path = request.getRequestURI();
@@ -51,8 +51,8 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
         String userId = request.getHeader("X-User-Id");
         String rolesHeader = request.getHeader("X-User-Roles");
-        log.info(">>> X-User-Id = {}", userId);
-        log.info(">>> X-User-Roles = {}", rolesHeader);
+        // log.info(">>> X-User-Id = {}", userId);
+        // log.info(">>> X-User-Roles = {}", rolesHeader);
 
         if (userId != null && rolesHeader != null) {
 
@@ -69,9 +69,9 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(auth);
 
-            log.info("Authentication SUCCESS - Authorities = {}", authorities);
-            log.warn(">>> REQUEST PATH = {}", request.getRequestURI());
-            log.info(">>> TOKEN = " + request.getHeader("Tên-header-token"));
+            // log.info("Authentication SUCCESS - Authorities = {}", authorities);
+            // log.warn(">>> REQUEST PATH = {}", request.getRequestURI());
+            // log.info(">>> TOKEN = " + request.getHeader("Tên-header-token"));
 
 
         }

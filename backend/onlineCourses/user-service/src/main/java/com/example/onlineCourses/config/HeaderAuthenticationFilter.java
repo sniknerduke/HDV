@@ -30,7 +30,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String header = headerNames.nextElement();
-            log.info("HEADER = " + header + " : " + request.getHeader(header));
+            // log.info("HEADER = " + header + " : " + request.getHeader(header));
         }
 
         String path = request.getRequestURI();
@@ -39,7 +39,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        log.info(">>> TOKEN = " + request.getHeader("Tên-header-token"));
+        // log.info(">>> TOKEN = " + request.getHeader("Tên-header-token"));
 
 //        if (path.startsWith("/api/orders/update-status")) {
 //            filterChain.doFilter(request, response);
@@ -65,9 +65,9 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(auth);
 
-            log.info("Authentication SUCCESS - Authorities = {}", authorities);
-            log.warn(">>> REQUEST PATH = {}", request.getRequestURI());
-            log.info(">>> TOKEN = " + request.getHeader("Tên-header-token"));
+            // log.info("Authentication SUCCESS - Authorities = {}", authorities);
+            // log.warn(">>> REQUEST PATH = {}", request.getRequestURI());
+            // log.info(">>> TOKEN = " + request.getHeader("Tên-header-token"));
 
 
         }

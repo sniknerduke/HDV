@@ -151,17 +151,26 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem('auth_user');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored) as { role?: string | null };
-        const mapped = mapApiRoleToClient(parsed.role);
-        if (mapped) {
-          setUser(mapped);
-        }
-      } catch (error) {
-        console.warn('Không thể đọc thông tin đăng nhập đã lưu', error);
+    const token = localStorage.getItem('auth_token');
+    const storedUser = localStorage.getItem('auth_user');
+
+    // If missing token or user info, clear any stale auth and stay logged out
+    if (!token || !storedUser) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(storedUser) as { role?: string | null };
+      const mapped = mapApiRoleToClient(parsed.role);
+      if (mapped) {
+        setUser(mapped);
       }
+    } catch (error) {
+      console.warn('Không thể đọc thông tin đăng nhập đã lưu', error);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
     }
   }, []);
 
