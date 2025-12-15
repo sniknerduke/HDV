@@ -176,6 +176,26 @@ const handleApiResponse = async <T>(response: Response): Promise<T> => {
   return response.json() as Promise<T>;
 };
 
+export interface ImportPlaylistResult {
+  imported: number;
+}
+
+export async function importPlaylistsRemote(
+  courseId: number,
+  playlistIds: string[],
+  token: string
+): Promise<ImportPlaylistResult> {
+  const response = await fetch(`${COURSE_API_BASE}/api/courses/${courseId}/import-playlist`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ playlistIds }),
+  });
+  return handleApiResponse<ImportPlaylistResult>(response);
+}
+
 export async function getCourses(token: string): Promise<Course[]> {
   const response = await fetch(`${COURSE_API_BASE}/api/courses/list`, {
     headers: {

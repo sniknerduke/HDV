@@ -1,5 +1,6 @@
 com\example\onlineCourses\service\LessonContentService.class
 com\example\onlineCourses\controller\LessonContentController.class
+com\example\onlineCourses\controller\LessonImportController.class
 com\example\onlineCourses\jwt\JwtAuthenticationFilter.class
 com\example\onlineCourses\jwt\JwtService.class
 com\example\onlineCourses\dto\ReorderRequest.class

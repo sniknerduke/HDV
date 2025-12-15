@@ -115,6 +115,30 @@ public class LessonContentService {
         persistLessonPositions(list);
     }
 
+    /**
+     * Auto-attach a lesson to the first section (or create a default section if none exists).
+     * Used by import flow.
+     */
+    public Lesson createLessonAuto(Long courseId, LessonRequest request) {
+        // try find existing section, else create default
+        Section section = sectionRepo.findFirstByCourseIdOrderByPositionAsc(courseId)
+                .orElseGet(() -> {
+                    Section s = new Section();
+                    s.setCourseId(courseId);
+                    s.setTitle("Mục 1");
+                    s.setPosition(0);
+                    return sectionRepo.save(s);
+                });
+
+        Lesson lesson = new Lesson();
+        lesson.setSection(section);
+        lesson.setTitle(request.getTitle());
+        lesson.setType(request.getType());
+        lesson.setVideoUrl(request.getVideoUrl());
+        lesson.setPosition((int) lessonRepo.countBySectionId(section.getId()));
+        return lessonRepo.save(lesson);
+    }
+
     @Transactional
     public List<Lesson> reorderLessons(Long courseId, Long sectionId, ReorderRequest req) {
         // ensure section exists

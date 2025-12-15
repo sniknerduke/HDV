@@ -8,9 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
-import { Search, Plus, Pencil, Trash2, CheckCircle2, XCircle, BookOpen, Users, DollarSign } from 'lucide-react'
+import { Search, Plus, Pencil, Trash2, CheckCircle2, XCircle, BookOpen, Users, DollarSign, Youtube } from 'lucide-react'
 import { toast } from 'sonner'
-import { Course as SvcCourse, createCourse, deleteCourseRemote, getCourses, persistCoursesSnapshot, updateCourseRemote } from '../../services/courseService'
+import { Course as SvcCourse, createCourse, deleteCourseRemote, getCourses, importPlaylistsRemote, persistCoursesSnapshot, updateCourseRemote } from '../../services/courseService'
+import YouTubeImportDialog from '../ui/YouTubeImportDialog'
 import { Chart as ChartJS, ArcElement, Tooltip as ChartTooltip, Legend as ChartLegend, CategoryScale, LinearScale, BarElement, type ChartOptions } from 'chart.js'
 import { Pie, Bar } from 'react-chartjs-2'
 
@@ -53,11 +54,14 @@ export default function CourseManagement({ onOpenCourse }: Props) {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isStatsOpen, setIsStatsOpen] = useState(false)
+  const [isYouTubeImportOpen, setIsYouTubeImportOpen] = useState(false)
   const [editingCourse, setEditingCourse] = useState<Course | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [publishingId, setPublishingId] = useState<number | null>(null)
   const [statsChartKey, setStatsChartKey] = useState(0)
+  const [playlistInput, setPlaylistInput] = useState('')
 
   const [formData, setFormData] = useState({
     code: '',
@@ -69,6 +73,16 @@ export default function CourseManagement({ onOpenCourse }: Props) {
     duration: '',
     status: 'draft' as 'draft' | 'published',
   })
+
+  const refreshCourses = async () => {
+    if (!authToken) return
+    try {
+      const data = await getCourses(authToken)
+      setCourses(data)
+    } catch (error) {
+      console.error('Failed to refresh courses:', error)
+    }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token')
@@ -240,6 +254,7 @@ export default function CourseManagement({ onOpenCourse }: Props) {
       duration: '',
       status: 'draft',
     })
+    setPlaylistInput('')
   }
 
   const handleCreateCourse = () => {
@@ -260,7 +275,41 @@ export default function CourseManagement({ onOpenCourse }: Props) {
       duration: course.duration ? (course.duration.match(/\d+/)?.[0] ?? '') : '',
       status: course.status,
     })
+    setPlaylistInput('')
     setIsDialogOpen(true)
+  }
+
+  const handleImportPlaylists = async () => {
+    const ids = playlistInput
+      .split(/\r?\n|,/)
+      .map(id => id.trim())
+      .filter(Boolean)
+
+    if (ids.length === 0) {
+      toast.error('Nhập ít nhất 1 playlist ID (mỗi dòng hoặc cách nhau bởi dấu phẩy).')
+      return
+    }
+
+    if (!editingCourse) {
+      toast.error('Chỉ import được khi đang chỉnh sửa khóa học đã tồn tại.')
+      return
+    }
+    if (!authToken) {
+      toast.error('Thiếu token xác thực. Vui lòng đăng nhập lại.')
+      return
+    }
+
+    setIsImporting(true)
+    try {
+      const result = await importPlaylistsRemote(editingCourse.id, ids, authToken)
+      toast.success(`Đã import ${result.imported} bài học từ playlist`)
+      setPlaylistInput('')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể import playlist'
+      toast.error(message)
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   const validateForm = () => {
@@ -544,6 +593,15 @@ export default function CourseManagement({ onOpenCourse }: Props) {
             </DialogContent>
           </Dialog>
 
+          <Button
+            variant="outline"
+            onClick={() => setIsYouTubeImportOpen(true)}
+            className="text-red-600 border-red-200 hover:bg-red-50"
+          >
+            <Youtube className="w-4 h-4 mr-2" />
+            Import từ YouTube
+          </Button>
+
           <Dialog
             open={isDialogOpen}
             onOpenChange={open => {
@@ -669,6 +727,31 @@ export default function CourseManagement({ onOpenCourse }: Props) {
                       <SelectItem value="published">Xuất bản</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Import từ playlist YouTube</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleImportPlaylists}
+                      disabled={isSaving || isImporting || !editingCourse}
+                    >
+                      {isImporting ? 'Đang import...' : 'Import from playlist'}
+                    </Button>
+                  </div>
+                  <Textarea
+                    rows={3}
+                    placeholder="Nhập nhiều playlist ID, mỗi dòng hoặc cách nhau bởi dấu phẩy"
+                    value={playlistInput}
+                    onChange={event => setPlaylistInput(event.target.value)}
+                    disabled={isSaving}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Dán playlist ID (mỗi dòng hoặc cách nhau bởi dấu phẩy). Cần lưu khóa học trước khi import.
+                  </p>
                 </div>
               </div>
               <DialogFooter>
@@ -841,6 +924,16 @@ export default function CourseManagement({ onOpenCourse }: Props) {
           </Table>
         </CardContent>
       </Card>
+
+      {/* YouTube Import Dialog */}
+      {authToken && (
+        <YouTubeImportDialog
+          open={isYouTubeImportOpen}
+          onOpenChange={setIsYouTubeImportOpen}
+          onImportComplete={refreshCourses}
+          authToken={authToken}
+        />
+      )}
     </div>
   )
 }
