@@ -47,7 +47,8 @@ public class JwtAuthenticationFilter implements GlobalFilter {
                 path.contains("/vnpay/return") ||
                 path.contains("/api/orders/update-status") ||
                 path.contains("/api/courses/public/list") ||
-                path.contains("/api/statistics") // <--- THÊM MỚI Ở ĐÂY
+                path.contains("/api/statistics") ||
+                path.contains("verify-otp") // <--- THÊM MỚI Ở ĐÂY
         ) {
             return chain.filter(exchange);
         }

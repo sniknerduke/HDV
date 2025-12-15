@@ -9,3 +9,4 @@ backend\backend.rar
 # Ignore the garbage you merged earlier (just in case)
 node_modules/
 target/
+.env
