@@ -41,10 +41,16 @@ public class JwtAuthenticationFilter implements GlobalFilter {
         String path = request.getURI().getPath();
 
 // Bỏ qua preflight + public endpoints
-        if (request.getMethod() == HttpMethod.OPTIONS || path.contains("login") || path.contains("register") || path.contains("/vnpay/return") || path.contains("/api/orders/update-status") || path.contains("/api/courses/public/list")) {
+        if (request.getMethod() == HttpMethod.OPTIONS ||
+                path.contains("login") ||
+                path.contains("register") ||
+                path.contains("/vnpay/return") ||
+                path.contains("/api/orders/update-status") ||
+                path.contains("/api/courses/public/list") ||
+                path.contains("/api/statistics") // <--- THÊM MỚI Ở ĐÂY
+        ) {
             return chain.filter(exchange);
         }
-
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);

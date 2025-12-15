@@ -24,15 +24,28 @@ public class Order {
     private List<OrderItem> items = new ArrayList<>();
 
 
+//    @PrePersist
+//    public void prePersist() {
+//        createdAt = LocalDateTime.now();
+//        status = "PENDING";
+//        if (orderId == null) {
+//            DateTimeFormatter f = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+//            orderId = "ORD-" + LocalDateTime.now().format(f);
+//        }
+//    }
+
     @PrePersist
     public void prePersist() {
         createdAt = LocalDateTime.now();
-        status = "PENDING";
+        if (status == null) {
+            status = "PENDING";
+        }
         if (orderId == null) {
             DateTimeFormatter f = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
             orderId = "ORD-" + LocalDateTime.now().format(f);
         }
     }
+
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
