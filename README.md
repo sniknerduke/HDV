@@ -10,3 +10,7 @@
   Set-ExecutionPolicy -ExecutionPolicy Unrestricted -Scope CurrentUser ( in ps with ad perm) <br>
   Remove-Item -Recurse -Force node_modules; Remove-Item package-lock.json; npm install ( remove and reinstall the npm modules that available in this shitty project :v then everything should be worked out i think )
   
+  ## Some time npm run dev f up bc of node modules conflicts soo
+  Remove-Item -Recurse -Force node_modules
+  Remove-Item -Force package-lock.json
+  for clear the node modules folder and package , prepare for new installation using npm install
