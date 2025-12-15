@@ -1,4 +1,11 @@
 node_modules
-node_modules
 flowchart drawio
 backend\backend.rar
+# Ignore config files
+*.properties
+*.yaml
+*.yml
+
+# Ignore the garbage you merged earlier (just in case)
+node_modules/
+target/

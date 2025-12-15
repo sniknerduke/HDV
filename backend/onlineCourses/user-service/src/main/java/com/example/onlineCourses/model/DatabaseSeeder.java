@@ -43,10 +43,10 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         System.out.println("--- Bắt đầu Seeding Dữ liệu Demo ---");
 
-        cleanUpOldData(); // Bắt buộc phải chạy trước
-        // 1. Chạy Seeding User trước
-        seedUsers();
-        seedOrdersAndOrderItems();
+        // cleanUpOldData(); // Bắt buộc phải chạy trước
+        // // 1. Chạy Seeding User trước
+        // seedUsers();
+        // seedOrdersAndOrderItems();
 
         System.out.println("--- Seeding Hoàn tất! Đã tạo " + NUMBER_OF_ORDERS + " đơn hàng ---");
     }

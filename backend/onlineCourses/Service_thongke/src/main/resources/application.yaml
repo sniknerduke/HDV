@@ -7,11 +7,14 @@ server:
 
 spring:
   datasource:
-    url: "jdbc:mysql://localhost:3307/Servicethongke"
+    url: "jdbc:mysql://localhost:3306/Servicethongke"
     username: root
-    password: root
+    password: matkhaumysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
+    # For Hibernate 6+ use MySQLDialect (MySQL8Dialect class removed)
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
       order_inserts: true

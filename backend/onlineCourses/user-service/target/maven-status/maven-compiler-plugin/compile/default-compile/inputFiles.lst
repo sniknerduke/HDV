@@ -30,6 +30,7 @@ D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\model\Enrollment.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\model\User.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\jwt\JwtService.java
+D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\DTO\SalesSummaryDTO.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\jwt\JwtAuthenticationFilter.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\model\DatabaseSeeder.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\controller\client\LessonClient.java

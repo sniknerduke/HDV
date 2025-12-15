@@ -37,6 +37,7 @@
             "cors": "^2.8.5",
             "date-fns": "*",
             "embla-carousel-react": "^8.6.0",
+            "fast-equals": "^5.4.0",
             "input-otp": "^1.4.2",
             "lucide-react": "^0.487.0",
             "react": "^18.3.1",
