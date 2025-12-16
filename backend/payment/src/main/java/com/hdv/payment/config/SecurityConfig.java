@@ -1,7 +1,7 @@
 package com.hdv.payment.config;
 
 //import com.example.onlineCourses.jwt.JwtAuthenticationFilter;
-import com.hdv.payment.jwt.JwtAuthenticationFilter;
+//import com.hdv.payment.jwt.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
