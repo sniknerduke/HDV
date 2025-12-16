@@ -1,4 +1,4 @@
-package com.hdv.payment;
+package com.hdv.payment.model;
 
 import jakarta.persistence.*;
 

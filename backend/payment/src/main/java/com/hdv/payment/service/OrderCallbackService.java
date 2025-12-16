@@ -1,5 +1,6 @@
-package com.hdv.payment;
+package com.hdv.payment.service;
 
+import com.hdv.payment.model.OrderStatusUpdateRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 

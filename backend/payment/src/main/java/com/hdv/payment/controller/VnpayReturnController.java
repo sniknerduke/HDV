@@ -1,5 +1,8 @@
-package com.hdv.payment;
+package com.hdv.payment.controller;
 
+import com.hdv.payment.model.PaymentTransaction;
+import com.hdv.payment.repository.PaymentTransactionRepository;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,14 +21,13 @@ public class VnpayReturnController {
 
     public VnpayReturnController(PaymentTransactionRepository repo) {
         this.repo = repo;
-        
 
     }
 
+//    @PreAuthorize("hasRole('USER')")
     @GetMapping("/return")
     public String handleReturn(@RequestParam Map<String, String> params) {
         System.out.println("Params từ VNPay: " + params);
-
         // 1) Verify signature
         String secureHash = params.get("vnp_SecureHash");
         params.remove("vnp_SecureHash");
@@ -65,18 +67,18 @@ public class VnpayReturnController {
                     "vnpTransactionNo", transactionNo,
                     "vnpResponseCode", responseCode
             );
-//            restTemplate.postForObject("http://localhost:8080/api/orders/update-status", payload, String.class);
-            restTemplate.postForObject("http://localhost:8080/payment/callback/vnpay", payload, String.class);
+//            restTemplate.postForObject("http://localhost:8080/payment/callback/vnpay", payload, String.class);
+            restTemplate.postForObject("http://localhost:8080/api/orders/update-status", payload, String.class);
+
         } catch (Exception e) {
             e.printStackTrace(); // không chặn redirect nếu sync lỗi
         }
 
-        // 5) Redirect back to Checkout page (Vite dev server)
-        String baseFrontend = "http://localhost:3000"; // adjust if deployed
+        // 5) Redirect to onlineCourses (8080)
         if ("SUCCESS".equals(tx.getStatus())) {
-            return "redirect:" + baseFrontend + "/checkout?payment=success&orderId=" + orderId + "&amount=" + amount;
+            return "redirect:http://localhost:3000/CourseList?payment=success&orderId=" + orderId + "&amount=" + amount;
         } else {
-            return "redirect:" + baseFrontend + "/checkout?payment=failed&orderId=" + orderId + "&code=" + responseCode;
+            return "redirect:http://localhost:3000/CourseList?payment=failed&orderId=" + orderId + "&code=" + responseCode;
         }
     }
 }
