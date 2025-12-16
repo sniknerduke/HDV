@@ -5,11 +5,18 @@ import com.example.onlineCourses.model.Provider;
 import com.example.onlineCourses.repository.CourseRepository;
 import com.example.onlineCourses.repository.ProviderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.client.RestTemplate;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Service
@@ -20,6 +27,18 @@ public class CourseService {
 
     @Autowired
     private ProviderRepository providerRepo;
+
+    private final RestTemplate restTemplate = new RestTemplate();
+    private static final String LESSON_SERVICE_BASE = "http://localhost:8083";
+
+    private String getCurrentAuthHeader() {
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            HttpServletRequest request = attrs.getRequest();
+            return request.getHeader("Authorization");
+        }
+        return null;
+    }
 
     public Course createCourse(Course course, String createdBy) {
         course.setCreatedBy(createdBy);
@@ -65,6 +84,26 @@ public class CourseService {
         if (!courseRepo.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Course not found with id: " + id);
         }
+
+        // Cascade delete lessons/sections in lesson-service with forwarded JWT
+        try {
+            String authHeader = getCurrentAuthHeader();
+            HttpHeaders headers = new HttpHeaders();
+            if (authHeader != null) {
+                headers.set("Authorization", authHeader);
+            }
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            restTemplate.exchange(
+                LESSON_SERVICE_BASE + "/api/lessons/course/" + id,
+                HttpMethod.DELETE,
+                entity,
+                Void.class
+            );
+        } catch (Exception ex) {
+            // Log and proceed with course deletion to avoid blocking
+            System.err.println("Failed to purge lessons for course " + id + ": " + ex.getMessage());
+        }
+
         courseRepo.deleteById(id);
     }
 

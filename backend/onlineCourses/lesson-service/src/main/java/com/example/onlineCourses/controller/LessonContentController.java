@@ -37,6 +37,14 @@ public class LessonContentController {
         return lessonContentService.createSection(courseId, request);
     }
 
+    // Cascade delete - called by courses-service when deleting a course
+    @PreAuthorize("hasAnyRole('STAFF','MANAGER','ADMIN')")
+    @DeleteMapping("/course/{courseId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCourseContent(@PathVariable Long courseId) {
+        lessonContentService.deleteCourseContent(courseId);
+    }
+
     @PreAuthorize("hasAnyRole('STAFF','MANAGER','ADMIN')")
     @PutMapping("/course/{courseId}/sections/{sectionId}")
     public Section updateSection(@PathVariable Long courseId,

@@ -51,6 +51,16 @@ public class LessonContentService {
         s.setDescription(StringUtils.hasText(req.getDescription()) ? req.getDescription().trim() : null);
         return sectionRepo.save(s);
     }
+    
+    @Transactional
+    public void deleteCourseContent(Long courseId) {
+        List<Section> sections = sectionRepo.findByCourseIdOrderByPositionAsc(courseId);
+        if (sections.isEmpty()) return;
+        
+        List<Long> sectionIds = sections.stream().map(Section::getId).toList();
+        lessonRepo.deleteBySectionIdIn(sectionIds);
+        sectionRepo.deleteByCourseId(courseId);
+    }
 
     @Transactional
     public void deleteSection(Long courseId, Long sectionId) {
