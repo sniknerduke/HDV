@@ -43,8 +43,8 @@ public class JwtAuthenticationFilter implements GlobalFilter {
         if (request.getMethod() == HttpMethod.OPTIONS ||
                 path.contains("login") ||
                 path.contains("register") ||
-                path.contains("/vnpay") ||
-                path.contains("/api/payment") ||
+                path.contains("/vnpay/return") ||
+//                path.contains("/api/payment") ||
                 path.contains("/api/orders/update-status") ||
                 path.contains("/api/courses/public/list") ||
                 path.contains("/api/statistics") ||
