@@ -33,6 +33,45 @@ type CatalogCourse = SvcCourse & {
   rating: number;
   displayPrice: string;
 };
+//
+// const [currentPage, setCurrentPage] = useState(1);
+// const itemsPerPage = 10; // số khóa học mỗi trang
+//
+// const paginatedCourses = useMemo(() => {
+//   const startIndex = (currentPage - 1) * itemsPerPage;
+//   const endIndex = startIndex + itemsPerPage;
+//   return filteredCourses.slice(startIndex, endIndex);
+// }, [filteredCourses, currentPage]);
+//
+// const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
+//
+// <div className="flex justify-center mt-6 gap-2">
+//   <button
+//     disabled={currentPage === 1}
+//     onClick={() => setCurrentPage(p => p - 1)}
+//     className="px-3 py-1 border rounded disabled:opacity-50"
+//   >
+//     Trước
+//   </button>
+//
+//   {Array.from({ length: totalPages }, (_, i) => (
+//     <button
+//       key={i}
+//       onClick={() => setCurrentPage(i + 1)}
+//       className={`px-3 py-1 border rounded ${currentPage === i + 1 ? 'bg-blue-500 text-white' : ''}`}
+//     >
+//       {i + 1}
+//     </button>
+//   ))}
+//
+//   <button
+//     disabled={currentPage === totalPages}
+//     onClick={() => setCurrentPage(p => p + 1)}
+//     className="px-3 py-1 border rounded disabled:opacity-50"
+//   >
+//     Sau
+//   </button>
+// </div>
 
 const formatPrice = (value: number): string => {
   if (!Number.isFinite(value) || value <= 0) {
@@ -189,6 +228,8 @@ export default function CourseCatalog({ onCourseSelect, userRole = null, onAddTo
           </Card>
         ) : (
           filteredCourses.map(course => (
+//               paginatedCourses.map(course => (
+
           <Card 
             key={course.id} 
             className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"

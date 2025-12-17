@@ -8,6 +8,7 @@ import com.example.onlineCourses.repository.OrderRepository;
 import com.example.onlineCourses.service.CartService;
 import com.example.onlineCourses.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -62,17 +63,18 @@ public class OrderController {
 
     //    @PreAuthorize("hasRole('USER')")
     @PostMapping("/update-status")
-    public ResponseEntity<Void> updateStatus(@RequestBody Map<String, Object> payload, @RequestHeader Map<String, String> headers) {
+//    public ResponseEntity<Void> updateStatus(@RequestBody Map<String, Object> payload, @RequestHeader Map<String, String> headers) {
+    public ResponseEntity<Void> updateStatus(@RequestBody OrderStatusUpdateRequest request) {
         // Log headers
-        System.out.println("Request Headers: " + headers);
+//        System.out.println("Request Headers: " + headers);
         // Log payload
-        System.out.println("Request Body: " + payload);
+//        System.out.println("Request Body: " + payload);
+//
+//        String orderId = (String) payload.get("orderId");
+//        String status = (String) payload.get("status");
 
-        String orderId = (String) payload.get("orderId");
-        String status = (String) payload.get("status");
-
-        orderService.updateStatus(orderId, status);
-
+//        orderService.updateStatus(orderId, status);
+        orderService.updateStatus(request.getOrderId(), request.getStatus());
         return ResponseEntity.ok().build();
     }
 
@@ -86,8 +88,40 @@ public class OrderController {
     //chưa sửa
     @GetMapping
     public List<Order> getAllOrders() {
-        return orderRepo.findAll();
+        return orderRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
+
+    @GetMapping("/status")
+    public List<Order> getOrders(@RequestParam(required = false) String status) {
+        if (status != null) {
+            return orderRepo.findByStatusOrderByCreatedAtDesc(status);
+        }
+        return orderRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    }
+
+//    @GetMapping("/filter")
+//    public List<Order> filterOrders(@RequestParam String start, @RequestParam String end) {
+//        LocalDateTime s = LocalDateTime.parse(start);
+//        LocalDateTime e = LocalDateTime.parse(end);
+//        return orderRepo.findByCreatedAtBetweenOrderByCreatedAtDesc(s, e);
+//    }
+@GetMapping("/filter")
+public List<Order> filterOrders(
+        @RequestParam String start,
+        @RequestParam String end,
+        @RequestParam(required = false) String status) {
+
+    LocalDateTime s = LocalDateTime.parse(start);
+    LocalDateTime e = LocalDateTime.parse(end);
+
+    if (status != null) {
+        return orderRepo.findByStatusAndCreatedAtBetweenOrderByCreatedAtDesc(status, s, e);
+    }
+    return orderRepo.findByCreatedAtBetweenOrderByCreatedAtDesc(s, e);
+}
+
+
+
 
     // dùng để thống kê
     @Autowired // Hoặc thêm vào constructor
