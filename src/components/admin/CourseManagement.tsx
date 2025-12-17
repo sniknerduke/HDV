@@ -36,7 +36,6 @@ const horizontalBarOptions: ChartOptions<'bar'> = {
 }
 
 type Course = SvcCourse
-type StatusFilter = 'all' | 'draft' | 'published'
 
 type Props = {
   onOpenCourse?: (course: Course) => void;
@@ -49,7 +48,6 @@ export default function CourseManagement({ onOpenCourse }: Props) {
   const [authToken, setAuthToken] = useState<string | null>(null)
 
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState<StatusFilter>('all')
   const [category, setCategory] = useState<'all' | string>('all')
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -71,7 +69,6 @@ export default function CourseManagement({ onOpenCourse }: Props) {
     level: 'Beginner',
     price: '',
     duration: '',
-    status: 'draft' as 'draft' | 'published',
   })
 
   const refreshCourses = async () => {
@@ -128,11 +125,10 @@ export default function CourseManagement({ onOpenCourse }: Props) {
         !query ||
         course.title.toLowerCase().includes(query) ||
         (course.code ? course.code.toLowerCase().includes(query) : false)
-      const matchesStatus = status === 'all' || course.status === status
       const matchesCategory = category === 'all' || course.category === category
-      return matchesQuery && matchesStatus && matchesCategory
+      return matchesQuery && matchesCategory
     })
-  }, [courses, search, status, category])
+  }, [courses, search, category])
 
   const total = courses.length
   const totalPublished = courses.filter(course => course.status === 'published').length
@@ -252,7 +248,6 @@ export default function CourseManagement({ onOpenCourse }: Props) {
       level: 'Beginner',
       price: '',
       duration: '',
-      status: 'draft',
     })
     setPlaylistInput('')
   }
@@ -273,7 +268,6 @@ export default function CourseManagement({ onOpenCourse }: Props) {
       level: course.level,
       price: course.price ? String(course.price) : '',
       duration: course.duration ? (course.duration.match(/\d+/)?.[0] ?? '') : '',
-      status: course.status,
     })
     setPlaylistInput('')
     setIsDialogOpen(true)
@@ -365,7 +359,6 @@ export default function CourseManagement({ onOpenCourse }: Props) {
           {
             category: formData.category,
             level: formData.level,
-            status: formData.status,
             students: editingCourse.students,
             duration: `${Math.round(durationValue)} giờ`,
           }
@@ -390,7 +383,6 @@ export default function CourseManagement({ onOpenCourse }: Props) {
             duration: Math.round(durationValue),
             category: formData.category,
             level: formData.level,
-            status: formData.status,
           },
           authToken
         )
@@ -515,7 +507,7 @@ export default function CourseManagement({ onOpenCourse }: Props) {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="mb-2">Quản lý khóa học</h1>
@@ -712,22 +704,6 @@ export default function CourseManagement({ onOpenCourse }: Props) {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label>Trạng thái</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={value => setFormData(prev => ({ ...prev, status: value as 'draft' | 'published' }))}
-                    disabled={isSaving}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Trạng thái" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Bản nháp</SelectItem>
-                      <SelectItem value="published">Xuất bản</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
@@ -807,7 +783,7 @@ export default function CourseManagement({ onOpenCourse }: Props) {
       </div>
 
       <Card className="mb-6">
-        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -817,16 +793,6 @@ export default function CourseManagement({ onOpenCourse }: Props) {
               onChange={event => setSearch(event.target.value)}
             />
           </div>
-          <Select value={status} onValueChange={value => setStatus(value as StatusFilter)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả trạng thái</SelectItem>
-              <SelectItem value="published">Xuất bản</SelectItem>
-              <SelectItem value="draft">Nháp</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={category} onValueChange={value => setCategory(value)}>
             <SelectTrigger>
               <SelectValue placeholder="Danh mục" />
@@ -843,12 +809,12 @@ export default function CourseManagement({ onOpenCourse }: Props) {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Danh sách khóa học</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="overflow-x-auto">
+          <Table className="w-full min-w-[1000px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Tên khóa học</TableHead>

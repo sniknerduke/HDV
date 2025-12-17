@@ -7,7 +7,7 @@ import { Textarea } from '../ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
-import { Plus, Edit, Trash2, BookOpen, Clock, DollarSign, Eye, Save, X, PlusCircle, Users, Youtube } from 'lucide-react';
+import { Plus, Edit, Trash2, BookOpen, Clock, DollarSign, Eye, Save, X, PlusCircle, Users, Youtube, Search } from 'lucide-react';
 import { getCourses, createCourse, deleteCourseRemote, updateCourseRemote, Course as SvcCourse, persistCoursesSnapshot, importPlaylistsRemote } from '../../services/courseService';
 import { toast } from 'sonner';
 import YouTubeImportDialog from '../ui/YouTubeImportDialog';
@@ -23,6 +23,7 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
   const [isImporting, setIsImporting] = useState(false);
   const [isYouTubeImportOpen, setIsYouTubeImportOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
 
   const refreshCourses = async () => {
     if (!authToken) return;
@@ -67,7 +68,6 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
     level: 'Beginner',
     price: '',
     duration: '',
-    status: 'draft' as 'published' | 'draft'
   });
   const [playlistInput, setPlaylistInput] = useState('');
 
@@ -83,7 +83,6 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
       level: 'Beginner',
       price: '',
       duration: '',
-      status: 'draft'
     });
     setPlaylistInput('');
     setIsDialogOpen(true);
@@ -99,7 +98,6 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
       level: course.level,
       price: course.price.toString(),
       duration: (course.duration.match(/\d+/)?.[0] ?? '').toString(),
-      status: course.status
     });
     setPlaylistInput('');
     setIsDialogOpen(true);
@@ -179,7 +177,6 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
           {
             category: formData.category,
             level: formData.level,
-            status: formData.status,
             students: editingCourse.students,
             duration: `${Math.round(durationValue)} giờ`,
           }
@@ -214,7 +211,6 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
           duration: Math.round(durationValue),
           category: formData.category,
           level: formData.level,
-          status: formData.status,
         },
         authToken
       );
@@ -400,18 +396,6 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
                   />
                 </div>
               </div>
-              <div>
-                <Label>Trạng thái</Label>
-                <Select value={formData.status} onValueChange={(value: 'published' | 'draft') => setFormData({...formData, status: value})} disabled={isSaving}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Bản nháp</SelectItem>
-                    <SelectItem value="published">Đã xuất bản</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -501,9 +485,30 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
         </Card>
       </div>
 
+      {/* Search */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              className="pl-9"
+              placeholder="Tìm kiếm khóa học theo tên hoặc mã..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Course List */}
       <div className="grid grid-cols-1 gap-6">
-        {courses.map((course) => (
+        {courses
+          .filter(course => {
+            const query = search.trim().toLowerCase();
+            if (!query) return true;
+            return course.title.toLowerCase().includes(query) || (course.code?.toLowerCase().includes(query) ?? false);
+          })
+          .map((course) => (
           <Card key={course.id} className="cursor-pointer" onClick={() => onOpenCourse ? onOpenCourse(course) : undefined}>
             <CardContent className="p-6" onClick={(e) => { e.stopPropagation(); /* allow buttons inside to handle own click */ }}>
               <div className="flex items-start justify-between">
@@ -579,6 +584,20 @@ export default function ManageCourses({ onOpenCourse }: { onOpenCourse?: (course
           </Card>
         ))}
       </div>
+
+      {courses.filter(course => {
+        const query = search.trim().toLowerCase();
+        if (!query) return true;
+        return course.title.toLowerCase().includes(query) || (course.code?.toLowerCase().includes(query) ?? false);
+      }).length === 0 && courses.length > 0 && (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Search className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Không tìm thấy khóa học</h3>
+            <p className="text-gray-600">Thử tìm kiếm với từ khóa khác</p>
+          </CardContent>
+        </Card>
+      )}
 
       {courses.length === 0 && (
         <Card>

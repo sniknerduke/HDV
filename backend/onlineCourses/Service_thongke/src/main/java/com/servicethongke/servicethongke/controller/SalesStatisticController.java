@@ -13,11 +13,8 @@ import java.util.stream.Collectors; // <-- THÊM: Cần để xử lý ánh xạ
 @RestController
 @RequestMapping("/api/statistics")
 
-// --- GIẢI THÍCH: CẤU HÌNH CORS (BẮT BUỘC) ---
-// Cho phép truy cập từ các nguồn cục bộ (null cho file://, 127.0.0.1:5500 cho VS Code Live Server)
-//@CrossOrigin(origins = {"http://localhost:3000", "null", "http://127.0.0.1:5500"}, maxAge = 3600)
-
-@CrossOrigin(origins = "*", maxAge = 3600)
+// --- CORS được xử lý bởi API Gateway, không cần @CrossOrigin ở đây ---
+// @CrossOrigin(origins = "*", maxAge = 3600)
 public class SalesStatisticController {
     private final SalesStatisticService salesStatisticService;
 

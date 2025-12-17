@@ -17,7 +17,7 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     // dừng để thống kê
     @Query("SELECT new com.example.onlineCourses.DTO.SalesSummaryDTO(oi.courseId, oi.courseName, COUNT(oi.id), SUM(oi.price)) " +
             "FROM OrderItem oi JOIN oi.order o " +
-            "WHERE o.status = 'PAID' " +
+            "WHERE o.status = 'SUCCESS' " +
             "AND o.createdAt BETWEEN :startDate AND :endDate " +
             "GROUP BY oi.courseId, oi.courseName")
     List<SalesSummaryDTO> findSalesStatistics(@Param("startDate") LocalDateTime startDate,

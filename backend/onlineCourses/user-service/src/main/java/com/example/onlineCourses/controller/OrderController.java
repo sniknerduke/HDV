@@ -91,6 +91,23 @@ public class OrderController {
         return orderRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
+    // DEBUG: Kiểm tra trạng thái orders trong database
+    @GetMapping("/debug-status")
+    public Map<String, Object> debugOrderStatus() {
+        List<Order> allOrders = orderRepo.findAll();
+        long successCount = allOrders.stream().filter(o -> "SUCCESS".equals(o.getStatus())).count();
+        long paidCount = allOrders.stream().filter(o -> "PAID".equals(o.getStatus())).count();
+        long pendingCount = allOrders.stream().filter(o -> "PENDING".equals(o.getStatus())).count();
+        
+        return Map.of(
+            "totalOrders", allOrders.size(),
+            "SUCCESS", successCount,
+            "PAID", paidCount,
+            "PENDING", pendingCount,
+            "allStatuses", allOrders.stream().map(o -> o.getOrderId() + ": " + o.getStatus()).toList()
+        );
+    }
+
     @GetMapping("/status")
     public List<Order> getOrders(@RequestParam(required = false) String status) {
         if (status != null) {
@@ -135,8 +152,18 @@ public List<Order> filterOrders(
         // Convert String sang LocalDateTime (Giả sử client gửi yyyy-MM-ddTHH:mm:ss)
         LocalDateTime startDate = LocalDateTime.parse(start);
         LocalDateTime endDate = LocalDateTime.parse(end);
-
-        return orderItemRepository.findSalesStatistics(startDate, endDate);
+        
+        // DEBUG: Log thông tin để kiểm tra
+        System.out.println("=== DEBUG STATS ===");
+        System.out.println("Start: " + startDate);
+        System.out.println("End: " + endDate);
+        
+        List<com.example.onlineCourses.DTO.SalesSummaryDTO> result = orderItemRepository.findSalesStatistics(startDate, endDate);
+        System.out.println("Result count: " + result.size());
+        result.forEach(r -> System.out.println("  - " + r.getCourseName() + ": " + r.getTotalSold() + " sold, " + r.getTotalRevenue() + " revenue"));
+        System.out.println("===================");
+        
+        return result;
     }
     // hết
 }
