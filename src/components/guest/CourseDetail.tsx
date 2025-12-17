@@ -3,6 +3,8 @@ import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Star, Clock, Users, BookOpen, PlayCircle, Award } from 'lucide-react';
 import { toast } from 'sonner';
+import { addToCart, CartItem } from '../../services/cartService';
+
 
 const fallbackCourseImage = 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=1200&h=630&fit=crop';
 
@@ -84,7 +86,7 @@ export default function CourseDetail({ course, onNavigate, userRole = null, onAd
                       variant="outline"
                       className="w-full"
                       onClick={() => {
-                        if (onAddToCart) onAddToCart(course); else toast.success('Đã thêm vào giỏ hàng');
+                        if (onAddToCart) {addToCart(course.id); toast.success('Đã thêm vào giỏ hàng');}
                       }}
                     >
                       Thêm vào giỏ hàng

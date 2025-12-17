@@ -225,12 +225,12 @@ export default function CourseCatalog({ onCourseSelect, userRole = null, onAddTo
               <div className="mt-4">
                 {userRole === 'student' ? (
                   <Button
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onAddToCart) addToCart(course.id); else toast.success('Đã thêm vào giỏ hàng');
-                    }}
-                  >
+                                      className="w-full"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (onAddToCart){ addToCart(course.id); toast.success('Đã thêm vào giỏ hàng');}
+                                      }}
+                                    >
                     Thêm vào giỏ hàng
                   </Button>
                 ) : userRole === 'teacher' ? (

@@ -31,14 +31,14 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
     try {
       const rawOrder = localStorage.getItem('current_order');
       if (rawOrder) {
-        const parsed = JSON.parse(rawOrder);
+        const order = JSON.parse(rawOrder);
         setCartItems(order.items.map((c: any) => ({
           id: c.id,
           title: c.courseName, // backend trả về courseName
           price: c.price
         })));
+            setCartTotal(order.amount); // ✅ lấy tổng tiền từ backend
         }
-        setCartTotal(order.amount); // ✅ lấy tổng tiền từ backend
 
     } catch {}
 
