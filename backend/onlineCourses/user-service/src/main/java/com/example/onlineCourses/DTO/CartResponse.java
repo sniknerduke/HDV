@@ -4,7 +4,8 @@ import java.util.List;
 
 public record CartResponse(
         List<CartItemDTO> items,
-        int totalPrice
+        long totalPrice,
+        int itemCount
 
 ) {
 //    @Override

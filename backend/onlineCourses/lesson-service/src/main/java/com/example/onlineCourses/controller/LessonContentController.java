@@ -24,7 +24,8 @@ public class LessonContentController {
     }
 
     /* -------- Read -------- */
-    @PreAuthorize("hasAnyRole('STAFF','MANAGER','ADMIN')")
+    // Allow USER role so enrolled students can view course content
+    @PreAuthorize("hasAnyRole('USER','STAFF','MANAGER','ADMIN')")
     @GetMapping("/course/{courseId}/structure")
     public List<Section> getCourseStructure(@PathVariable Long courseId) {
         return lessonContentService.getSectionsWithLessons(courseId);

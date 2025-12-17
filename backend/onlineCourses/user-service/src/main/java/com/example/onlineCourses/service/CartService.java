@@ -51,7 +51,8 @@ public class CartService {
     public CartResponse getCart(Long userId) {
         // 1. Lấy toàn bộ item trong giỏ
         List<CartItem> items = cartItemRepository.findByUserId(userId);
-        int total = 0;
+        long total = 0;
+        int itemCount = 0;
         List<CartItemDTO> itemDtos = new ArrayList<>();
 
         // 2. Với mỗi item → gọi CourseService lấy giá/title
@@ -68,11 +69,12 @@ public class CartService {
             );
 
             itemDtos.add(dto);
-            total += course.price() ;
+            total += course.price();
+            itemCount++;
         }
 
         // 5. Trả ra FE
-        return new CartResponse(itemDtos, total);
+        return new CartResponse(itemDtos, total, itemCount);
     }
 
     public CartItem addToCart(Long userId, Long courseId) {

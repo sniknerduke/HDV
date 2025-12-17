@@ -27,7 +27,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
         String path = request.getRequestURI();
 
-        log.info("Request URI = {}", request.getRequestURI());
+        // log.info("Request URI = {}", request.getRequestURI());
 
         // Bỏ qua filter cho các path public
         if (path.startsWith("/api/payment/vnpay/return") || path.startsWith("/api/payment/vnpay/ipn")) {
@@ -53,7 +53,7 @@ public class HeaderAuthenticationFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(auth);
 
-            log.info("Authentication SUCCESS - Authorities = {}", authorities);
+            // log.info("Authentication SUCCESS - Authorities = {}", authorities);
         }
 
         filterChain.doFilter(request, response);

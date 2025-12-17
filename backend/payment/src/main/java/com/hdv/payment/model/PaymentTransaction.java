@@ -15,6 +15,7 @@ public class PaymentTransaction {
     private String status;         // PENDING, SUCCESS, FAILED
     private String vnpTransactionNo; // Mã giao dịch từ VNPay
     private String vnpResponseCode;  // Mã phản hồi (00 = thành công)
+    private String returnUrl;        // Trang FE để hiển thị kết quả
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -78,6 +79,14 @@ public class PaymentTransaction {
 
     public void setVnpResponseCode(String vnpResponseCode) {
         this.vnpResponseCode = vnpResponseCode;
+    }
+
+    public String getReturnUrl() {
+        return returnUrl;
+    }
+
+    public void setReturnUrl(String returnUrl) {
+        this.returnUrl = returnUrl;
     }
 
     public LocalDateTime getCreatedAt() {

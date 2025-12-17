@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-// import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
-import { PlayCircle, ChevronLeft, ChevronRight, Check, Lock, Video, FileText as FileTextIcon, Link as LinkIcon, MessageSquare, NotebookPen, Tv } from 'lucide-react';
+import { PlayCircle, ChevronLeft, ChevronRight, Check, Lock, Video, FileText as FileTextIcon, Link as LinkIcon, MessageSquare, NotebookPen, Tv, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Resource { type: 'pdf' | 'link' | 'file'; name: string; url: string }
 interface Lesson {
@@ -18,6 +17,25 @@ interface Lesson {
   hasLive?: boolean;
   liveLink?: string;
   resources?: Resource[];
+  videoUrl?: string;
+  sectionId?: number;
+  sectionTitle?: string;
+  type?: string;
+}
+
+interface Section {
+  id: number;
+  title: string;
+  description?: string;
+  lessons: Array<{
+    id: number;
+    title: string;
+    duration?: string;
+    locked?: boolean;
+    completed?: boolean;
+    videoUrl?: string;
+    type?: string;
+  }>;
 }
 
 interface CourseWithLessons {
@@ -25,6 +43,7 @@ interface CourseWithLessons {
   title: string;
   instructor?: string;
   lessons?: Lesson[];
+  sections?: Section[];
   currentLessonId?: number;
 }
 
@@ -32,15 +51,62 @@ interface CourseContentProps {
   course: CourseWithLessons | null;
 }
 
+// Helper to extract YouTube video ID from various URL formats
+function extractYouTubeVideoId(url: string): string | null {
+  if (!url) return null;
+  
+  // Handle youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/[?&]v=([^&]+)/);
+  if (watchMatch) return watchMatch[1];
+  
+  // Handle youtu.be/VIDEO_ID
+  const shortMatch = url.match(/youtu\.be\/([^?&]+)/);
+  if (shortMatch) return shortMatch[1];
+  
+  // Handle youtube.com/embed/VIDEO_ID
+  const embedMatch = url.match(/youtube\.com\/embed\/([^?&]+)/);
+  if (embedMatch) return embedMatch[1];
+  
+  return null;
+}
+
 export default function CourseContent({ course }: CourseContentProps) {
   const [activeLessonId, setActiveLessonId] = useState<number | null>(course?.currentLessonId ?? course?.lessons?.[0]?.id ?? null);
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(new Set());
   const lessons = useMemo(() => course?.lessons ?? [], [course]);
+  const sections = useMemo(() => course?.sections ?? [], [course]);
   const activeLesson = useMemo(() => lessons.find(l => l.id === activeLessonId) || null, [lessons, activeLessonId]);
   const storageKey = course ? `edu_progress_${course.id}` : '';
   const notesKey = course && activeLesson ? `edu_notes_${course.id}_${activeLesson.id}` : '';
 
   const [notes, setNotes] = useState<string>('');
-  // const [zoomOpen, setZoomOpen] = useState(false);
+
+  // Get YouTube embed URL for active lesson
+  const youtubeEmbedUrl = useMemo(() => {
+    if (!activeLesson?.videoUrl) return null;
+    const videoId = extractYouTubeVideoId(activeLesson.videoUrl);
+    if (!videoId) return null;
+    return `https://www.youtube.com/embed/${videoId}`;
+  }, [activeLesson]);
+
+  // Initialize expanded sections - expand the section containing active lesson
+  useEffect(() => {
+    if (activeLesson?.sectionId) {
+      setExpandedSections(prev => new Set(prev).add(activeLesson.sectionId!));
+    }
+  }, [activeLesson?.sectionId]);
+
+  const toggleSection = (sectionId: number) => {
+    setExpandedSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     if (!course || !storageKey) return;
@@ -87,7 +153,7 @@ export default function CourseContent({ course }: CourseContentProps) {
     if (idx < lessons.length - 1) setActiveLessonId(lessons[idx + 1].id);
   };
 
-  const tryActivate = (lesson: Lesson) => {
+  const tryActivate = (lesson: { id: number; locked?: boolean }) => {
     if (lesson.locked) {
       toast.message('Bài học này đang khóa. Hãy hoàn thành bài trước.');
       return;
@@ -101,10 +167,24 @@ export default function CourseContent({ course }: CourseContentProps) {
         {/* Main player and controls */}
          <div className="lg:col-span-8 order-2 lg:order-1">
           <Card className="mb-4 overflow-hidden">
-            <div className="flex justify-center py-4 bg-gray-100">
-              <div className="w-full max-w-xl aspect-video bg-gray-900 rounded flex items-center justify-center shadow">
-                <PlayCircle className="w-12 h-12 text-white" />
-              </div>
+            <div className="flex justify-center py-4 bg-gray-900">
+              {youtubeEmbedUrl ? (
+                <iframe
+                  className="w-full aspect-video"
+                  src={youtubeEmbedUrl}
+                  title={activeLesson?.title || 'Video bài học'}
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="w-full max-w-xl aspect-video bg-gray-800 rounded flex items-center justify-center shadow">
+                  <div className="text-center text-gray-400">
+                    <PlayCircle className="w-12 h-12 mx-auto mb-2" />
+                    <p>Chọn bài học để xem video</p>
+                  </div>
+                </div>
+              )}
             </div>
             <CardContent className="p-4 md:p-6">
               <div className="flex items-start justify-between gap-4">
@@ -189,35 +269,88 @@ export default function CourseContent({ course }: CourseContentProps) {
          <div className="lg:col-span-4 order-1 lg:order-2">
           <Card>
             <CardContent className="p-0">
-              <div className="px-4 py-3 border-b sticky top-0 bg-white z-10"><h3 className="text-base font-medium">Danh sách bài học</h3></div>
-              <ul className="max-h-[calc(100vh-12rem)] overflow-y-auto">
-                {lessons.map((l) => {
-                  const isActive = l.id === activeLessonId;
-                  return (
-                    <li key={l.id}>
+              <div className="px-4 py-3 border-b sticky top-0 bg-white z-10"><h3 className="text-base font-medium">Nội dung khóa học</h3></div>
+              <div className="max-h-[calc(100vh-12rem)] overflow-y-auto">
+                {sections.length > 0 ? (
+                  // Group by sections
+                  sections.map((section) => (
+                    <div key={section.id} className="border-b last:border-b-0">
                       <button
-                        className={`w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50 ${isActive ? 'bg-blue-50' : ''}`}
-                        onClick={() => tryActivate(l)}
+                        className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50 bg-gray-50"
+                        onClick={() => toggleSection(section.id)}
                       >
-                        <div className="flex items-center gap-3">
-                          {l.locked ? (
-                            <Lock className="w-4 h-4 text-gray-400" />
-                          ) : l.completed ? (
-                            <Check className="w-4 h-4 text-green-600" />
-                          ) : (
-                            <PlayCircle className="w-4 h-4 text-blue-600" />
-                          )}
-                          <div>
-                            <div className="text-sm font-medium">{l.title}</div>
-                            <div className="text-xs text-gray-500">{l.duration || ''}</div>
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm">{section.title}</span>
+                          <span className="text-xs text-gray-500">({section.lessons?.length || 0} bài)</span>
                         </div>
-                         {/* Live badge removed */}
+                        {expandedSections.has(section.id) ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        )}
                       </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                      {expandedSections.has(section.id) && (
+                        <ul>
+                          {section.lessons?.map((l) => {
+                            const isActive = l.id === activeLessonId;
+                            return (
+                              <li key={l.id}>
+                                <button
+                                  className={`w-full text-left px-6 py-2 flex items-center justify-between gap-3 hover:bg-gray-50 ${isActive ? 'bg-blue-50' : ''}`}
+                                  onClick={() => tryActivate(l)}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    {l.locked ? (
+                                      <Lock className="w-4 h-4 text-gray-400" />
+                                    ) : l.completed ? (
+                                      <Check className="w-4 h-4 text-green-600" />
+                                    ) : (
+                                      <Video className="w-4 h-4 text-blue-600" />
+                                    )}
+                                    <div>
+                                      <div className="text-sm">{l.title}</div>
+                                      {l.duration && <div className="text-xs text-gray-500">{l.duration}</div>}
+                                    </div>
+                                  </div>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  // Flat list fallback
+                  <ul>
+                    {lessons.map((l) => {
+                      const isActive = l.id === activeLessonId;
+                      return (
+                        <li key={l.id}>
+                          <button
+                            className={`w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50 ${isActive ? 'bg-blue-50' : ''}`}
+                            onClick={() => tryActivate(l)}
+                          >
+                            <div className="flex items-center gap-3">
+                              {l.locked ? (
+                                <Lock className="w-4 h-4 text-gray-400" />
+                              ) : l.completed ? (
+                                <Check className="w-4 h-4 text-green-600" />
+                              ) : (
+                                <Video className="w-4 h-4 text-blue-600" />
+                              )}
+                              <div>
+                                <div className="text-sm font-medium">{l.title}</div>
+                                <div className="text-xs text-gray-500">{l.duration || ''}</div>
+                              </div>
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>

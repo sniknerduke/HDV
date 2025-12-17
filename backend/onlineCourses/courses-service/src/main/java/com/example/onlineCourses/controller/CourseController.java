@@ -85,4 +85,11 @@ public class CourseController {
         return courseService.getCoursesByIds(ids);
     }
 
+    // GET /by-ids?ids=1,2,3 - for fetching multiple courses by IDs
+    @PreAuthorize("hasAnyRole('USER','STAFF','MANAGER','ADMIN')")
+    @GetMapping("/by-ids")
+    public List<Course> getCoursesByIdsParam(@RequestParam List<Long> ids) {
+        return courseService.getCoursesByIds(ids);
+    }
+
 }

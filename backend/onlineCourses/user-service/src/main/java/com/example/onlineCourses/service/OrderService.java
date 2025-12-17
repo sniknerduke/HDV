@@ -95,6 +95,9 @@ public class OrderService {
             for (OrderItem item : items) {
                 userCourseService.createUserCourse(order.getUserId(), item.getCourseId(), orderId);
             }
+
+            // Thanh toán thành công thì dọn giỏ hàng của user
+            cartItemRepo.deleteByUserId(order.getUserId());
         }
     }
 
