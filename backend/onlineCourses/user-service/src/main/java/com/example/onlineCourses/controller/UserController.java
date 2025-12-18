@@ -103,6 +103,21 @@ public class UserController {
         return userService.getAllUsers();
     }
 
+    // Current authenticated user's profile
+    @PreAuthorize("hasAnyRole('USER','STAFF','MANAGER','ADMIN')")
+    @GetMapping("/me")
+    public ResponseEntity<UserDTO> getMe(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractUserId(token);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(userService.getUserById(userId));
+    }
+
     // Lấy người dùng theo ID
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/{id}")

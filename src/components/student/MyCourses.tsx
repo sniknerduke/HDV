@@ -1,42 +1,158 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
-import { PlayCircle, Star } from 'lucide-react';
+import { PlayCircle, Star, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
+import { getMyCourses, UserCourseDto } from '../../services/userCourseService';
+import { fetchCourseStructure, SectionDto } from '../../services/lessonService';
 
-const enrolledCourses = [
-  {
-    id: 1,
-    title: 'Lập trình React cơ bản',
-    instructor: 'Nguyễn Văn A',
-    progress: 65,
-    image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop'
-  },
-  {
-    id: 2,
-    title: 'Tiếng Anh giao tiếp',
-    instructor: 'Trần Thị B',
-    progress: 40,
-    image: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=400&h=250&fit=crop'
-  }
-];
+const COURSE_API_BASE = import.meta.env.VITE_COURSE_SERVICE_URL ?? 'http://localhost:9090';
+
+interface CourseDetails {
+  id: number;
+  code: string;
+  title: string;
+  description?: string;
+  price?: number;
+  createdBy?: string;
+}
+
+interface EnrolledCourseDisplay {
+  id: number;
+  courseId: number;
+  title: string;
+  instructor: string;
+  progress: number;
+  image: string;
+  description?: string;
+  sections?: SectionDto[];
+}
 
 interface MyCoursesProps {
   onCourseSelect: (course: any) => void;
 }
 
 export default function MyCourses({ onCourseSelect }: MyCoursesProps) {
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourseDisplay[]>([]);
+  const [loading, setLoading] = useState(true);
   const [openForCourse, setOpenForCourse] = useState<number | null>(null);
   const [rating, setRating] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
   const [criteria, setCriteria] = useState<{content: boolean; instructor: boolean; materials: boolean; experience: boolean}>({ content: false, instructor: false, materials: false, experience: false });
 
-  const currentStudentId = 1; // mock current user id
+  const currentStudentId = (() => {
+    const userStr = localStorage.getItem('auth_user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.id || 1;
+      } catch {
+        return 1;
+      }
+    }
+    return 1;
+  })();
+
+  // Fetch enrolled courses on mount
+  useEffect(() => {
+    const loadEnrolledCourses = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          toast.error('Vui lòng đăng nhập');
+          setLoading(false);
+          return;
+        }
+
+        const userCourses: UserCourseDto[] = await getMyCourses();
+        
+        if (userCourses.length === 0) {
+          setEnrolledCourses([]);
+          setLoading(false);
+          return;
+        }
+
+        const courseIds = userCourses.map(uc => uc.courseId);
+        const authToken = localStorage.getItem('auth_token');
+        const coursesResponse = await fetch(`${COURSE_API_BASE}/api/courses/by-ids?ids=${courseIds.join(',')}`, {
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+          },
+        });
+
+        if (!coursesResponse.ok) {
+          throw new Error('Failed to fetch course details');
+        }
+
+        const courseDetails: CourseDetails[] = await coursesResponse.json();
+
+        const displayCourses: EnrolledCourseDisplay[] = courseDetails.map(course => ({
+          id: course.id,
+          courseId: course.id,
+          title: course.title,
+          instructor: course.createdBy || 'Giảng viên',
+          progress: 0,
+          image: `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop`,
+          description: course.description,
+        }));
+
+        setEnrolledCourses(displayCourses);
+      } catch (error) {
+        console.error('Error loading enrolled courses:', error);
+        toast.error('Không thể tải danh sách khóa học');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadEnrolledCourses();
+  }, []);
+
+  // Handle course selection - fetch sections/lessons
+  const handleCourseSelect = async (course: EnrolledCourseDisplay) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        toast.error('Vui lòng đăng nhập');
+        return;
+      }
+
+      const sections = await fetchCourseStructure(course.courseId, token);
+      
+      const allLessons = sections.flatMap((section) => 
+        section.lessons.map((lesson) => ({
+          id: lesson.id,
+          title: lesson.title,
+          duration: '',
+          locked: false,
+          completed: false,
+          hasLive: false,
+          videoUrl: lesson.videoUrl,
+          sectionId: section.id,
+          sectionTitle: section.title,
+          type: lesson.type,
+        }))
+      );
+
+      const firstLesson = allLessons.length > 0 ? allLessons[0] : null;
+
+      onCourseSelect({
+        ...course,
+        sections: sections,
+        lessons: allLessons,
+        currentLessonId: firstLesson?.id ?? null,
+      });
+    } catch (error) {
+      console.error('Error fetching course structure:', error);
+      toast.error('Không thể tải nội dung khóa học');
+    }
+  };
 
   type StoredReview = {
     reviewId: number;
@@ -119,64 +235,41 @@ export default function MyCourses({ onCourseSelect }: MyCoursesProps) {
     setOpenForCourse(null);
   };
 
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <span className="ml-2">Đang tải khóa học...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="p-8">
       <h1 className="mb-6">Khóa học của tôi</h1>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {enrolledCourses.map(course => (
-          <Card key={course.id} className="overflow-hidden">
-            <img src={course.image} alt={course.title} className="w-full h-48 object-cover" />
-            <CardContent className="p-4">
-              <h3 className="mb-2">{course.title}</h3>
-              <p className="text-sm text-gray-600 mb-4">{course.instructor}</p>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1"
-                  onClick={() =>
-                    onCourseSelect({
-                      ...course,
-                      // Inject simple lesson structure for CourseContent consumption
-                      lessons: [
-                        {
-                          id: 101,
-                          title: 'Giới thiệu khóa học',
-                          duration: '10:35',
-                          locked: false,
-                          completed: false,
-                          hasLive: false,
-                          resources: [
-                            { type: 'pdf', name: 'Slide bài 1', url: '#' },
-                          ],
-                        },
-                        {
-                          id: 102,
-                          title: 'Cài đặt môi trường',
-                          duration: '18:20',
-                          locked: false,
-                          completed: false,
-                          hasLive: true,
-                          liveLink: 'https://zoom.us/j/123456789',
-                          resources: [
-                            { type: 'link', name: 'Tải Node.js', url: 'https://nodejs.org' },
-                          ],
-                        },
-                        {
-                          id: 103,
-                          title: 'JSX & Component cơ bản',
-                          duration: '22:47',
-                          locked: true,
-                          completed: false,
-                          hasLive: false,
-                          resources: [],
-                        },
-                      ],
-                      currentLessonId: 101,
-                    })
-                  }
-                >
-                  <PlayCircle className="w-4 h-4 mr-2" />
-                  Tiếp tục học
-                </Button>
+      {enrolledCourses.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-600 mb-4">Bạn chưa đăng ký khóa học nào.</p>
+          <Button onClick={() => window.location.href = '/courses'}>
+            Khám phá khóa học
+          </Button>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {enrolledCourses.map(course => (
+            <Card key={course.id} className="overflow-hidden">
+              <img src={course.image} alt={course.title} className="w-full h-48 object-cover" />
+              <CardContent className="p-4">
+                <h3 className="mb-2">{course.title}</h3>
+                <p className="text-sm text-gray-600 mb-4">{course.instructor}</p>
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    onClick={() => handleCourseSelect(course)}
+                  >
+                    <PlayCircle className="w-4 h-4 mr-2" />
+                    Tiếp tục học
+                  </Button>
                 <Dialog open={openForCourse === course.id} onOpenChange={(open) => !open ? setOpenForCourse(null) : openReview(course.id)}>
                   <DialogTrigger asChild>
                     <Button variant="outline">Đánh giá</Button>
@@ -233,6 +326,7 @@ export default function MyCourses({ onCourseSelect }: MyCoursesProps) {
           </Card>
         ))}
       </div>
+      )}
     </div>
   );
 }

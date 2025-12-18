@@ -14,8 +14,8 @@ export interface TotalSummary {
     totalRevenue: number;
 }
 
-// Gọi thẳng vào 8084
-const API_URL = 'http://localhost:8084/api/statistics'; 
+// Gọi qua API Gateway (9090) thay vì trực tiếp 8084
+const API_URL = 'http://localhost:9090/api/statistics'; 
 
 export async function fetchCourseSales(startDate: Date, endDate: Date): Promise<CourseSalesResponse[]> { 
     try {

@@ -5,7 +5,9 @@ import com.example.onlineCourses.model.UserCourse;
 import com.example.onlineCourses.repository.UserCourseRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserCourseService {
@@ -14,6 +16,18 @@ public class UserCourseService {
 
     public UserCourseService(UserCourseRepository userCourseRepository) {
         this.userCourseRepository = userCourseRepository;
+    }
+
+    public List<UserCourseDto> getUserCourses(Long userId) {
+        List<UserCourse> courses = userCourseRepository.findByUserId(userId);
+        return courses.stream()
+                .map(uc -> new UserCourseDto(
+                        uc.getUserId(),
+                        uc.getCourseId(),
+                        uc.getOrderId(),
+                        uc.getStatus()
+                ))
+                .collect(Collectors.toList());
     }
 
     public UserCourseDto checkAccess(Long userId, Long courseId) {

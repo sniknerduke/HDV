@@ -2,7 +2,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Search, Star, Users, BookOpen } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { fetchCoursesForCatalog, fetchPublicCourses, Course } from '../../services/courseService';
+import { fetchPublicCourses, Course } from '../../services/courseService';
 
 const fallbackImages = [
   'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop',
@@ -34,8 +34,11 @@ export default function GuestHome({ onNavigate, onCourseSelect }: GuestHomeProps
   useEffect(() => {
     (async () => {
       try {
-        const data: Course[] = await fetchCoursesForCatalog(undefined).catch(() => fetchPublicCourses());
-        const decorated = data.map((c, idx) => ({
+        // Always fetch live public list so all courses show up (no seed/cache fallback)
+        const data: Course[] = await fetchPublicCourses();
+        // Show only the newest 6 courses (assuming API returns newest first)
+        const topSix = data.slice(0, 6);
+        const decorated = topSix.map((c, idx) => ({
           ...c,
           instructor: fallbackInstructors[idx % fallbackInstructors.length],
           price: formatPrice(c.price),

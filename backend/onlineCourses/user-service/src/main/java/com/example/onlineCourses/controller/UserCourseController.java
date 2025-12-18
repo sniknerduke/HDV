@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/user-courses")
 public class UserCourseController {
@@ -14,6 +16,14 @@ public class UserCourseController {
 
     public UserCourseController(UserCourseService userCourseService) {
         this.userCourseService = userCourseService;
+    }
+
+    // GET /api/user-courses/my-courses - Get all courses for current user
+    @GetMapping("/my-courses")
+    public ResponseEntity<List<UserCourseDto>> getMyCourses(
+            @RequestHeader("X-User-Id") Long userId) {
+        List<UserCourseDto> courses = userCourseService.getUserCourses(userId);
+        return ResponseEntity.ok(courses);
     }
 
     // GET /api/user-courses/check?userId=123&courseId=456

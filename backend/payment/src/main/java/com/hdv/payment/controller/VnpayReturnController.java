@@ -8,8 +8,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 
 @Controller //để redirect hoạt động
 @RequestMapping("/api/payment/vnpay")
@@ -73,12 +77,18 @@ public class VnpayReturnController {
             e.printStackTrace(); // không chặn redirect nếu sync lỗi
         }
 
-        // 5) Redirect to onlineCourses (8080)
-        if ("SUCCESS".equals(tx.getStatus())) {
-            return "redirect:http://localhost:3000/CourseList?payment=success&orderId=" + orderId + "&amount=" + amount;
-        } else {
-            return "redirect:http://localhost:3000/CourseList?payment=failed&orderId=" + orderId + "&code=" + responseCode;
-        }
+        // 5) Redirect back to the FE page that initiated payment
+        String baseReturnUrl = Optional.ofNullable(tx.getReturnUrl())
+                .orElse("http://localhost:3000/payment/result");
+
+        UriComponentsBuilder builder = UriComponentsBuilder
+                .fromHttpUrl(baseReturnUrl)
+                .queryParam("payment", "SUCCESS".equals(tx.getStatus()) ? "success" : "failed")
+                .queryParam("orderId", orderId)
+                .queryParam("amount", amount)
+                .queryParam("code", responseCode);
+
+        return "redirect:" + builder.build().encode(StandardCharsets.UTF_8).toUriString();
     }
 }
 

@@ -34,6 +34,9 @@ public class VnpayController {
     @PostMapping("/create")
     public ResponseEntity<PaymentCreateResponse> create(@RequestBody PaymentCreateRequest req) {
 
+    String returnUrl = Optional.ofNullable(req.getReturnUrl())
+        .orElse("http://localhost:3000/payment/result");
+
         Map<String, String> params = new TreeMap<>();
         params.put("vnp_Version", "2.1.0");
         params.put("vnp_Command", "pay");
@@ -44,8 +47,7 @@ public class VnpayController {
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
         params.put("vnp_CurrCode", "VND");
-//        params.put("vnp_ReturnUrl", req.getReturnUrl()); // về frontend của Main Project
-        params.put("vnp_ReturnUrl", "http://localhost:9090/api/payment/vnpay/return");
+    params.put("vnp_ReturnUrl", "http://localhost:9090/api/payment/vnpay/return");
 //        params.put("vnp_IpnUrl", "http://localhost:8081/payment/vnpay/ipn"); //trả về inp
 
         params.put("vnp_IpAddr", Optional.ofNullable(req.getIpAddress()).orElse("127.0.0.1"));
@@ -65,6 +67,7 @@ public class VnpayController {
         tx.setOrderId(req.getOrderId());
         tx.setAmount(req.getAmount());
         tx.setStatus("PENDING");
+        tx.setReturnUrl(returnUrl);
         repo.save(tx);
 
 //        System.out.println("Query: " + query);
