@@ -32,6 +32,8 @@ import TeacherProfile from './components/teacher/TeacherProfile';
 import AdminDashboard from './components/admin/AdminDashboard';
 import UserManagement from './components/admin/UserManagement';
 import CourseManagement from './components/admin/CourseManagement';
+import OrderManagement from './components/admin/OrderManagement';
+
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -84,6 +86,7 @@ export default function App() {
     'admin-dashboard': '/admin',
     'user-management': '/admin/users',
     'admin-courses': '/admin/courses',
+    'admin-orders': '/admin/orders', // Thêm dòng này
     'admin-course-content': '/admin/course-content',
   } as Record<string, string>), []);
 
@@ -388,6 +391,7 @@ export default function App() {
         // Analytics merged into dashboard; removed separate page
         { icon: Users, label: 'Quản lý người dùng', page: 'user-management' },
         { icon: BookOpen, label: 'Quản lý khóa học', page: 'admin-courses' },
+        { icon: FileText, label: 'Quản lý đơn hàng', page: 'admin-orders' }, // Thêm dòng này
       ];
     }
 
@@ -475,6 +479,7 @@ export default function App() {
   }
   if (currentPage === 'user-management') return <UserManagement />;
   if (currentPage === 'admin-courses') return <CourseManagement onOpenCourse={(course: any) => { setSelectedCourse(course); localStorage.setItem('last_course_id', String(course.id)); navigateTo('admin-course-content'); }} />;
+  if (currentPage === 'admin-orders') return <OrderManagement />;
   if (currentPage === 'admin-course-content') return (
     <TeacherCourseContentManager course={selectedCourse} onNavigate={navigateTo} backPage="admin-courses" />
   );

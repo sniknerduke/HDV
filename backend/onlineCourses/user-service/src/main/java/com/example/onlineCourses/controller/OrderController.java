@@ -8,6 +8,8 @@ import com.example.onlineCourses.repository.OrderRepository;
 import com.example.onlineCourses.service.CartService;
 import com.example.onlineCourses.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -86,10 +88,16 @@ public class OrderController {
     }
 
     //chưa sửa
+//    @GetMapping
+//    public List<Order> getAllOrders() {
+//        return orderRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+//    }
     @GetMapping
-    public List<Order> getAllOrders() {
-        return orderRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
+    public Page<Order> getAllOrders(@RequestParam(defaultValue = "0") int page,
+                                    @RequestParam(defaultValue = "10") int size) {
+        return orderRepo.findAll(PageRequest.of(page, size, Sort.by("createdAt").descending()));
     }
+
 
     // DEBUG: Kiểm tra trạng thái orders trong database
     @GetMapping("/debug-status")
