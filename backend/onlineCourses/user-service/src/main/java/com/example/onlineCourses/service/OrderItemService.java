@@ -24,6 +24,7 @@ public class OrderItemService {
                         i.getId(),
                         i.getOrder().getId(),
                         i.getCourseId(),
+                        i.getCourseName(),
                         i.getPrice()
                 ))
                 .collect(Collectors.toList());

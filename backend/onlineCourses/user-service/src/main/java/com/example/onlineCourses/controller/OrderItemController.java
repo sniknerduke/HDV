@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/order-items")
+@RequestMapping("/api/orders/order-items")
 public class OrderItemController {
 
     private final OrderItemService orderItemService;
@@ -18,8 +18,9 @@ public class OrderItemController {
     }
 
     // GET /api/orders/{orderId}/items
-    @GetMapping("/orders/{orderId}/items")
-    public ResponseEntity<List<OrderItemDTO>> getOrderItems(@PathVariable Long orderId) {
+    @GetMapping("/{orderId}/items")
+    public ResponseEntity<List<OrderItemDTO>> getOrderItems(@PathVariable Long orderId, @RequestHeader("X-User-Id") Long userId
+    ) {
         List<OrderItemDTO> items = orderItemService.getOrderItemsByOrderId(orderId);
         return ResponseEntity.ok(items);
     }

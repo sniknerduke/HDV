@@ -16,6 +16,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -52,7 +55,11 @@ public class OrderService {
         // 2. Tạo order trước để có tham chiếu
         Order order = new Order();
         order.setUserId(userId);
-        order.setOrderId(UUID.randomUUID().toString());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String datePart = LocalDateTime.now().format(formatter);
+//        order.setOrderId(UUID.randomUUID().toString());
+        String orderId = "ORD-" + datePart;
+        order.setOrderId(orderId);
         order.setStatus("PENDING");
         // 2. Với mỗi item → gọi CourseService lấy giá/title
         for (CartItem item : cartItems) {
@@ -109,6 +116,8 @@ public class OrderService {
         return orderRepo.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
     }
+
+    public List<Order> getOrdersByUserId(Long userId) { return orderRepo.findByUserIdOrderByCreatedAtDesc(userId); }
 
     public Order getOrderByOrderId(String orderId) {
         return orderRepo.findByOrderId(orderId)

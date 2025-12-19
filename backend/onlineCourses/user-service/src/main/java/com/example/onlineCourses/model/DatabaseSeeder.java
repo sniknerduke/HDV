@@ -7,7 +7,12 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 // Import các Entity Order và OrderItem của bạn
@@ -19,6 +24,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final EntityManager entityManager;
     private final Faker faker = new Faker();
     private final PasswordEncoder passwordEncoder;
+    private final DateTimeFormatter orderIdFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     // Số lượng bản ghi muốn tạo
     private final int NUMBER_OF_ORDERS = 500;
@@ -43,15 +49,14 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         System.out.println("--- Bắt đầu Seeding Dữ liệu Demo ---");
 
-        // cleanUpOldData(); // Bắt buộc phải chạy trước
+//         cleanUpOldData(); // Bắt buộc phải chạy trước
         // // 1. Chạy Seeding User trước
         // seedUsers();
-        // seedOrdersAndOrderItems();
+//         seedOrdersAndOrderItems();
 
-        System.out.println("--- Seeding Hoàn tất! Đã tạo " + NUMBER_OF_ORDERS + " đơn hàng ---");
+//        System.out.println("--- Seeding Hoàn tất! Đã tạo " + NUMBER_OF_ORDERS + " đơn hàng ---");
     }
 //...
-// ... tiếp tục trong lớp DatabaseSeeder
     private void cleanUpOldData() {
         System.out.println("1. Xóa dữ liệu cũ (TRUNCATE)...");
         try {
@@ -84,6 +89,8 @@ private void seedOrdersAndOrderItems() {
 
     List<Order> ordersToPersist = new ArrayList<>();
 
+    DateTimeFormatter idFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
     for (int i = 0; i < NUMBER_OF_ORDERS; i++) {
         Order order = createFakeOrder(i);
 
@@ -99,8 +106,8 @@ private void seedOrdersAndOrderItems() {
 
         // Cập nhật tổng tiền (amount) và trạng thái
         order.setAmount(totalAmount);
-//        order.setStatus(faker.options().option("PAID", "PENDING", "FAILED"));
-        order.setStatus(faker.options().option("SUCCESS"));
+        order.setStatus(faker.options().option("SUCCESS", "PENDING", "FAILED"));
+//        order.setStatus(faker.options().option("SUCCESS"));
 
 
         ordersToPersist.add(order);
@@ -114,7 +121,7 @@ private void seedOrdersAndOrderItems() {
 
     // Ép dữ liệu xuống DB ngay lập tức
     entityManager.flush();
-    entityManager.clear();
+//    entityManager.clear();
 
     System.out.println("   -> Đã tạo và chèn thành công " + NUMBER_OF_ORDERS + " đơn hàng.");
 }
@@ -178,18 +185,56 @@ private void seedOrdersAndOrderItems() {
 
     private Order createFakeOrder(int index) {
         Order order = new Order();
-        // Faker cho userId, giả định có 100 User mẫu (ID từ 1 đến 100)
         order.setUserId(faker.number().numberBetween(1L, 100L));
 
-        // Giả lập thời gian tạo trong vòng 1 năm qua
-        order.setCreatedAt(faker.date().past(365, TimeUnit.DAYS).toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+        // Sinh ngày ngẫu nhiên từ 01/01/2020 đến hôm nay
+        Date startDate = java.sql.Date.valueOf(LocalDate.of(2020, 1, 1));
+        Date endDate = java.sql.Date.valueOf(LocalDate.now());
 
-        // orderId và status MẶC ĐỊNH được xử lý bởi @PrePersist,
-        // nhưng có thể ghi đè status sau khi tính toán amount.
+        Date randomDate = faker.date().between(startDate, endDate);
+        LocalDateTime randomDateTime = randomDate.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
 
-        //có thể set các thuộc tính khác nếu cần
+        order.setCreatedAt(randomDateTime);
+
+        // Tạo OrderId theo định dạng ORD-yyyyMMddHHmmss + index
+        String customId = "ORD-" + randomDateTime.format(orderIdFormatter) + String.format("%03d", index);
+        order.setOrderId(customId);
+        System.out.println("Seeder createdAt: " + randomDateTime + " | OrderId: " + customId);
         return order;
     }
+
+//    private Order createFakeOrder(int index) {
+//        Order order = new Order();
+//        // Faker cho userId, giả định có 100 User mẫu (ID từ 1 đến 100)
+//        order.setUserId(faker.number().numberBetween(1L, 100L));
+//
+//        // Giả lập thời gian tạo trong vòng 1 năm qua
+//        LocalDateTime randomDateTime = faker.date()
+//                .past(365, TimeUnit.DAYS)
+//                .toInstant()
+//                .atZone(java.time.ZoneId.systemDefault())
+//                .toLocalDateTime();
+//
+//        order.setCreatedAt(randomDateTime);
+//
+//        // 2. Tạo OrderId theo định dạng ORD-yyyyMMddHHmmss
+//        // Lưu ý: Nếu có nhiều đơn hàng trùng giây, bạn có thể cộng thêm index để tránh trùng PK
+//        String customId = "ORD-" + randomDateTime.format(orderIdFormatter) + String.format("%03d", index);
+//
+//        // Giả sử field trong Entity của bạn là setId(String id) hoặc setOrderId(String id)
+//        order.setOrderId(customId);
+//
+//        // Các thông tin khác
+//        order.setUserId(faker.number().numberBetween(1L, 100L));
+////        String customId = "ORD-" + randomDateTime.format(orderIdFormatter) + String.format("%03d", index);
+//        // orderId và status MẶC ĐỊNH được xử lý bởi @PrePersist,
+//        // nhưng có thể ghi đè status sau khi tính toán amount.
+//
+//        //có thể set các thuộc tính khác nếu cần
+//        return order;
+//    }
 
     private OrderItem createFakeOrderItem(Order order) {
         OrderItem item = new OrderItem();

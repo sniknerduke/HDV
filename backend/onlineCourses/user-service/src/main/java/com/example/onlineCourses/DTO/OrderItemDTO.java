@@ -4,14 +4,14 @@ public class OrderItemDTO {
     private Long id;
     private Long orderId;
     private Long courseId;
-    private String courseTitle;
+    private String courseName;
     private long price;
 
-    public OrderItemDTO(Long id, Long orderId, Long courseId,String courseTitle, long price) {
+    public OrderItemDTO(Long id, Long orderId, Long courseId,String courseName, long price) {
         this.id = id;
         this.orderId = orderId;
         this.courseId = courseId;
-        this.courseTitle = courseTitle;
+        this.courseName = courseName;
         this.price = price;
     }
 
@@ -48,11 +48,11 @@ public class OrderItemDTO {
     }
 
     public String getCourseTitle() {
-        return courseTitle;
+        return courseName;
     }
 
-    public void setCourseTitle(String courseTitle) {
-        this.courseTitle = courseTitle;
+    public void setCourseTitle(String courseName) {
+        this.courseName = courseName;
     }
     // Getter & Setter
 }

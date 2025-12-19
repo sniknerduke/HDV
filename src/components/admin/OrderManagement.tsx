@@ -5,8 +5,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '.
 import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
 
-import { getOrdersPage } from '../../services/orderService';
-import type { Order } from '../../services/orderService';
+import { getOrdersPage, getOrdersDetail, filterOrders, search } from '../../services/orderService';
+import type { Order, OrderItemDTO } from '../../services/orderService';
 
 import {
   DollarSign,
@@ -57,17 +57,29 @@ export default function OrderManagement() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-// useEffect(() => {
-//       async function fetchOrders() {
-//         try {
-//           const data = await getAllOrders();
-//           setOrders(data);
-//         } catch (error) {
-//           console.error('Error fetching orders:', error);
-//         }
-//       }
-//       fetchOrders();
-//     }, []);
+  const [selectedOrderItems, setSelectedOrderItems] = useState<OrderItemDTO[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+
+//   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  const [searchType, setSearchType] = useState<"orderId" | "userId">("orderId");
+
+  const [error, setError] = useState<string | null>(null);
+
+
+
+
+  const viewOrderDetail = async (orderId: number) => {
+    try {
+      const items = await getOrdersDetail (orderId);
+      setSelectedOrderItems(items);
+      setSelectedOrderId(orderId);
+    } catch (error) {
+      console.error("Error fetching order items:", error);
+    }
+  };
 
   useEffect(() => {
     async function fetchOrders() {
@@ -76,6 +88,9 @@ export default function OrderManagement() {
         console.log("Refresh data:", data);
         setOrders(data.content);
         setTotalPages(data.totalPages);
+
+        const items = await viewOrderDetail(orderId);
+        setSelectedOrderItems(items ?? []);
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
@@ -103,7 +118,7 @@ export default function OrderManagement() {
         return <Badge className="bg-green-100 text-green-700 border-green-200">Thành công</Badge>
       case 'PENDING':
         return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">Chờ xử lý</Badge>
-      case 'cancelled':
+      case 'FAILED':
         return <Badge className="bg-red-100 text-red-700 border-red-200">Đã hủy</Badge>
       default:
         return <Badge>{status}</Badge>
@@ -156,28 +171,89 @@ export default function OrderManagement() {
       <Card className="mb-6">
         <CardContent className="p-4 flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Tìm theo mã đơn hoặc tên khách hàng..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full md:w-[200px]">
-              <SelectValue placeholder="Trạng thái" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả trạng thái</SelectItem>
-              <SelectItem value="completed">Thành công</SelectItem>
-              <SelectItem value="pending">Chờ xử lý</SelectItem>
-              <SelectItem value="cancelled">Đã hủy</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" className="gap-2">
-            <Filter className="w-4 h-4" /> Lọc nâng cao
+              <select value={searchType} onChange={(e) => setSearchType(e.target.value as "orderId" | "userId")}>
+                <option value="orderId">Mã đơn hàng</option>
+                <option value="userId">Mã khách hàng</option>
+              </select>
+
+
+              <Input placeholder="Nhập số..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter") {
+                    try {
+                        setError(null); // reset lỗi trước khi gọi
+                        if (!searchTerm.trim()) {
+                          setError("Vui lòng nhập số để tìm kiếm");
+                          alert("Vui lòng nhập số để tìm kiếm");
+                          return;
+                        }
+                      const data = await search(searchType as "orderId" | "userId", Number(searchTerm));
+                      setOrders(Array.isArray(data) ? data : [data]);
+                    } catch (err) {
+                      console.error("Search error", err);
+                    }
+                  }
+                }}
+              />
+            </div>
+            <div className="flex flex-row gap-4">
+              {/* Status filter */}
+              <div className="flex flex-col">
+                <span className="text-sm font-medium mb-1">Trạng thái</span>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full md:w-[200px]">
+                    <SelectValue placeholder="Chọn trạng thái" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                    <SelectItem value="SUCCESS">Thành công</SelectItem>
+                    <SelectItem value="pending">Chờ xử lý</SelectItem>
+                    <SelectItem value="FAILED">Đã hủy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Date range filter */}
+              <div className="flex flex-row gap-4">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium mb-1">Ngày bắt đầu</span>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full md:w-[180px]"
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium mb-1">Ngày kết thúc</span>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full md:w-[180px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+
+
+          <Button
+            variant="ghost"
+            className="gap-2"
+            onClick={async () => {
+              try {
+                const data = await filterOrders(startDate, endDate, statusFilter);
+                setOrders(data); // cập nhật danh sách đơn hàng
+              } catch (err) {
+                console.error("Filter error", err);
+              }
+            }}
+          >
+            <Filter className="w-4 h-4" /> Lọc
           </Button>
+
         </CardContent>
       </Card>
 
@@ -188,6 +264,7 @@ export default function OrderManagement() {
             <table className="w-full text-sm text-left">
               <thead className="bg-gray-50 text-gray-600 uppercase text-xs font-medium">
                 <tr>
+                  <th className="px-6 py-4">Id</th>
                   <th className="px-6 py-4">Mã đơn hàng</th>
                   <th className="px-6 py-4">Khách hàng</th>
                   <th className="px-6 py-4">Ngày giao dịch</th>
@@ -200,6 +277,7 @@ export default function OrderManagement() {
                 {orders.map((order) => ( //tai sao
                   <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 font-medium text-blue-600">{order.id}</td>
+                    <td className="px-6 py-4">{order.orderId}</td>
                     <td className="px-6 py-4">{order.userId}</td>
                     <td className="px-6 py-4 text-gray-500">
                       {order.createdAt ? new Date(order.createdAt).toLocaleDateString('vi-VN') : ''}
@@ -207,7 +285,7 @@ export default function OrderManagement() {
                     <td className="px-6 py-4 font-semibold">{order.amount.toLocaleString()}đ</td>
                     <td className="px-6 py-4">{getStatusBadge(order.status)}</td>
                     <td className="px-6 py-4 text-right">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => viewOrderDetail(order.id)}>
                         <Eye className="w-4 h-4" />
                       </Button>
                     </td>
@@ -249,6 +327,53 @@ export default function OrderManagement() {
                 </Button>
               </div>
             </div>
+
+            {selectedOrderId && (
+              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <Card className="w-[900px]">
+                  <CardHeader>
+                    <CardTitle>Chi tiết đơn hàng #{selectedOrderId}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <table className="table-fixed w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          {/* Cột tên khóa học chiếm phần lớn diện tích */}
+                          <th className="text-left px-4 py-2 font-medium text-blue-600">
+                            Khóa học
+                          </th>
+                          {/* Cột giá tiền cố định chiều rộng */}
+                          <th className="w-[120px] px-6 py-2 text-right font-medium text-blue-600">
+                            Giá
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {selectedOrderItems.map(item => (
+                          <tr key={item.id}>
+                            <td className="px-4 py-3">
+                              {/* Để truncate hoạt động, bọc text trong một div có max-width hoặc dùng class truncate trực tiếp */}
+                              <div className="truncate max-w-[500px]" title={item.courseTitle}>
+                                {item.courseTitle}
+                              </div>
+                            </td>
+                            <td className="px-6 py-3 text-right whitespace-nowrap">
+                              {item.price.toLocaleString()}đ
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+
+                    <div className="mt-4 text-right">
+                      <Button onClick={() => setSelectedOrderId(null)}>
+                        Đóng
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
         </CardContent>
       </Card>

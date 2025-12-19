@@ -18,13 +18,52 @@ export interface Order {
 //   return res.data;
 // }
 
+export async function getOrderItems(orderId: number): Promise<OrderItemDTO[]> {
+  const res = await api.get(`/orders/${orderId}/items`);
+  return res.data;
+}
+
+export interface OrderItemDTO {
+  id: number;
+  orderId: number;
+  courseId: number;
+  courseTitle: string;
+  price: number;
+}
+
+export async function filterOrders(startDate: string, endDate: string, status?: string) {
+  const params = new URLSearchParams();
+  params.append("start", `${startDate}T00:00:00`);   // thêm giờ để parse được LocalDateTime
+  params.append("end", `${endDate}T23:59:59`);
+  if (status && status !== "all") {
+    params.append("status", status);
+  }
+
+  const res = await api.get(`/orders/filter?${params.toString()}`);
+  return res.data;
+}
+
+export async function search(type: "orderId" | "userId", value: number): Promise<OrderItemDTO[]> {
+  const res = await api.get(`/orders/search`, { params: { type, value } });
+  return res.data;
+}
+
+// export async function search(orderId?: number, userId?: number): Promise<OrderItemDTO[]> {
+//     const params: any = {};
+//   if (orderId) params.id = orderId;
+//   if (userId) params.userId = userId;
+//
+//   const res = await api.get(`/orders/search` , { params }); // truyền params vào
+//   return res.data;
+// }
+
 export async function getOrdersPage(page: number, size: number): Promise<{content: Order[], totalPages: number, totalElements: number}> {
   const res = await api.get(`/orders?page=${page}&size=${size}`);
   return res.data;
 }
 
-export async function getOrdersDetail(page: number, size: number): Promise<{content: Order[], totalPages: number, totalElements: number}> {
-  const res = await api.get(`/orders?page=${page}&size=${size}`);
+export async function getOrdersDetail(orderId: number): Promise<OrderItemDTO[]> {
+  const res = await api.get(`/orders/order-items/${orderId}/items`);
   return res.data;
 }
 
