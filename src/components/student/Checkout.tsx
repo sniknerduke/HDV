@@ -7,6 +7,8 @@ import { Label } from '../ui/label';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { CreditCard, Wallet, Building2, CheckCircle2 } from 'lucide-react';
 import { createVnpayPayment } from '../../services/paymentService';
+import { getOrderById } from '../../services/orderService';
+
 
 interface CheckoutProps { onNavigate: (page: string) => void; }
 
@@ -28,19 +30,29 @@ export default function Checkout({ onNavigate }: CheckoutProps) {
 //     const cartTotal = cartItems.reduce((sum, i) => sum + (i.price || 0), 0);
 
   useEffect(() => {
-    try {
-      const rawOrder = localStorage.getItem('current_order');
-      if (rawOrder) {
-        const order = JSON.parse(rawOrder);
-        setCartItems(order.items.map((c: any) => ({
-          id: c.id,
-          title: c.courseName, // backend trả về courseName
-          price: c.price
-        })));
-            setCartTotal(order.amount); // ✅ lấy tổng tiền từ backend
+      const fetchOrder = async () => {
+        try {
+          const rawOrder = localStorage.getItem('current_order');
+          if (rawOrder) {
+            const parsed = JSON.parse(rawOrder); // parse string thành object
+            const order = await getOrderById(parsed.id); // gọi API backend
+            if (order) {
+              setCartItems(order.items.map((c: any) => ({
+                id: c.id,
+                title: c.courseName, // backend trả về courseName
+                price: c.price
+              })));
+              setCartTotal(order.amount); // ✅ lấy tổng tiền từ backend
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching order:", err);
         }
+      };
 
-    } catch {}
+      fetchOrder();
+
+
 
     // Detect VNPay redirect result via query params
     try {
