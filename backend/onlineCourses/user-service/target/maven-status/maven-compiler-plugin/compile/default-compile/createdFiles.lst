@@ -21,10 +21,8 @@ com\example\onlineCourses\DTO\CartItemDTO.class
 com\example\onlineCourses\controller\OrderPaymentController.class
 com\example\onlineCourses\model\User$Role.class
 com\example\onlineCourses\controller\OrderController.class
-com\example\onlineCourses\model\VNPayRequest.class
 com\example\onlineCourses\repository\OrderRepository.class
 com\example\onlineCourses\mapper\UserMapper.class
-com\example\onlineCourses\controller\PaymentForwardController.class
 com\example\onlineCourses\config\SecurityConfig.class
 com\example\onlineCourses\model\CartItem.class
 com\example\onlineCourses\model\Enrollment.class

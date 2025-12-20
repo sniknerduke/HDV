@@ -25,7 +25,6 @@ interface EnrolledCourseDisplay {
   id: number;
   courseId: number;
   title: string;
-  instructor: string;
   progress: number;
   image: string;
   description?: string;
@@ -58,6 +57,12 @@ export default function MyCourses({ onCourseSelect }: MyCoursesProps) {
     return 1;
   })();
 
+  const truncate = (text?: string, max = 120) => {
+    if (!text) return '';
+    if (text.length <= max) return text;
+    return `${text.slice(0, max - 3)}...`;
+  };
+
   // Fetch enrolled courses on mount
   useEffect(() => {
     const loadEnrolledCourses = async () => {
@@ -79,10 +84,9 @@ export default function MyCourses({ onCourseSelect }: MyCoursesProps) {
         }
 
         const courseIds = userCourses.map(uc => uc.courseId);
-        const authToken = localStorage.getItem('auth_token');
         const coursesResponse = await fetch(`${COURSE_API_BASE}/api/courses/by-ids?ids=${courseIds.join(',')}`, {
           headers: {
-            'Authorization': `Bearer ${authToken}`,
+            'Authorization': `Bearer ${token}`,
           },
         });
 
@@ -96,7 +100,6 @@ export default function MyCourses({ onCourseSelect }: MyCoursesProps) {
           id: course.id,
           courseId: course.id,
           title: course.title,
-          instructor: course.createdBy || 'Giảng viên',
           progress: 0,
           image: `https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&h=250&fit=crop`,
           description: course.description,
@@ -261,7 +264,7 @@ export default function MyCourses({ onCourseSelect }: MyCoursesProps) {
               <img src={course.image} alt={course.title} className="w-full h-48 object-cover" />
               <CardContent className="p-4">
                 <h3 className="mb-2">{course.title}</h3>
-                <p className="text-sm text-gray-600 mb-4">{course.instructor}</p>
+                <p className="text-sm text-gray-600 mb-4 h-12 overflow-hidden">{truncate(course.description, 120)}</p>
                 <div className="flex gap-2">
                   <Button
                     className="flex-1"
