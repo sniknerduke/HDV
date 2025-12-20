@@ -232,69 +232,74 @@ export default function CourseCatalog({ onCourseSelect, userRole = null, onAddTo
 
           <Card 
             key={course.id} 
-            className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+            className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow h-full"
             onClick={() => onCourseSelect(course)}
           >
             <img src={course.image} alt={course.title} className="w-full h-48 object-cover" />
-            <CardContent className="p-4">
-              <div className="flex gap-2 mb-2">
-                <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">{course.category}</span>
-                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">{course.level}</span>
-              </div>
-              <h3 className="mb-2">{course.title}</h3>
-              <p className="text-gray-600 text-sm mb-3 line-clamp-2">{course.description || 'Khóa học đang cập nhật mô tả.'}</p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="text-sm">{course.rating.toFixed(1)}</span>
-                  <span className="text-gray-400 text-sm">({course.students} học viên)</span>
+            <CardContent className="p-4 flex flex-col h-full">
+              <div className="flex-1 flex flex-col gap-2">
+                <div className="flex gap-2 mb-2">
+                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">{course.category}</span>
+                  <span className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded">{course.level}</span>
                 </div>
-                <span className="font-semibold">{course.displayPrice}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm text-gray-500 mt-3">
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  <span>{course.students} học viên</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{course.duration || 'Đang cập nhật'}</span>
-                </div>
+                <h3 className="font-bold">{course.title}</h3>
+                <p className="text-gray-600 text-sm line-clamp-2">{course.description || 'Khóa học đang cập nhật mô tả.'}</p>
               </div>
 
-              {/* Action button */}
-              <div className="mt-4">
-                {userRole === 'student' ? (
-                  <Button
-                                      className="w-full"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (onAddToCart){ addToCart(course.id); toast.success('Đã thêm vào giỏ hàng');}
-                                      }}
-                                    >
-                    Thêm vào giỏ hàng
-                  </Button>
-                ) : userRole === 'teacher' ? (
-                  <Button
-                    className="w-full opacity-60 cursor-not-allowed"
-                    disabled
-                    onClick={(e) => e.stopPropagation()}
-                    title="Chỉ học sinh mới có thể thêm vào giỏ hàng"
-                  >
-                    Thêm vào giỏ hàng
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onRequestLogin) onRequestLogin(); else toast.message('Vui lòng đăng nhập để mua');
-                    }}
-                  >
-                    Đăng nhập để mua
-                  </Button>
-                )}
+              <div className="mt-auto pt-6 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-medium">{course.rating.toFixed(1)}</span>
+                    <span className="text-gray-400 text-sm">({course.students} học viên)</span>
+                  </div>
+                  <span className="font-bold text-blue-600">{course.displayPrice}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center gap-1">
+                    <Users className="w-4 h-4" />
+                    <span>{course.students} học viên</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    <span>{course.duration || 'Đang cập nhật'}</span>
+                  </div>
+                </div>
+
+                <div className="mt-2">
+                  {userRole === 'student' ? (
+                    <Button
+                      className="w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onAddToCart){ addToCart(course.id); toast.success('Đã thêm vào giỏ hàng');}
+                      }}
+                    >
+                      Thêm vào giỏ hàng
+                    </Button>
+                  ) : userRole === 'teacher' ? (
+                    <Button
+                      className="w-full opacity-60 cursor-not-allowed"
+                      disabled
+                      onClick={(e) => e.stopPropagation()}
+                      title="Chỉ học sinh mới có thể thêm vào giỏ hàng"
+                    >
+                      Thêm vào giỏ hàng
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onRequestLogin) onRequestLogin(); else toast.message('Vui lòng đăng nhập để mua');
+                      }}
+                    >
+                      Đăng nhập để mua
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
