@@ -49,10 +49,10 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         System.out.println("--- Bắt đầu Seeding Dữ liệu Demo ---");
 
-//         cleanUpOldData(); // Bắt buộc phải chạy trước
+         cleanUpOldData(); // Bắt buộc phải chạy trước
         // // 1. Chạy Seeding User trước
         // seedUsers();
-//         seedOrdersAndOrderItems();
+         seedOrdersAndOrderItems();
 
 //        System.out.println("--- Seeding Hoàn tất! Đã tạo " + NUMBER_OF_ORDERS + " đơn hàng ---");
     }
@@ -187,21 +187,33 @@ private void seedOrdersAndOrderItems() {
         Order order = new Order();
         order.setUserId(faker.number().numberBetween(1L, 100L));
 
-        // Sinh ngày ngẫu nhiên từ 01/01/2020 đến hôm nay
-        Date startDate = java.sql.Date.valueOf(LocalDate.of(2020, 1, 1));
-        Date endDate = java.sql.Date.valueOf(LocalDate.now());
+//        // Sinh ngày ngẫu nhiên từ 01/01/2020 đến hôm nay
+//        Date startDate = java.sql.Date.valueOf(LocalDate.of(2020, 1, 1));
+//        Date endDate = java.sql.Date.valueOf(LocalDate.now());
+//
+//        Date randomDate = faker.date().between(startDate, endDate);
+//        LocalDateTime randomDateTime = randomDate.toInstant()
+//                .atZone(ZoneId.systemDefault())
+//                .toLocalDateTime();
+//
+//        order.setCreatedAt(randomDateTime);
 
-        Date randomDate = faker.date().between(startDate, endDate);
-        LocalDateTime randomDateTime = randomDate.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDateTime();
+            // Mốc bắt đầu
+            LocalDateTime baseDate = LocalDateTime.of(2020, 1, 1, 0, 0);
 
-        order.setCreatedAt(randomDateTime);
+            // Cộng thêm số phút ngẫu nhiên nhưng tăng dần theo index
+            // Ví dụ: mỗi order cách nhau 1–1440 phút (tối đa 1 ngày)
+            long randomMinutes = faker.number().numberBetween(1, 1440);
+            LocalDateTime createdAt = baseDate.plusMinutes(index * randomMinutes);
+
+            order.setCreatedAt(createdAt);
+
 
         // Tạo OrderId theo định dạng ORD-yyyyMMddHHmmss + index
-        String customId = "ORD-" + randomDateTime.format(orderIdFormatter) + String.format("%03d", index);
+//        String customId = "ORD-" + randomDateTime.format(orderIdFormatter) + String.format("%03d", index);
+        String customId = "ORD-" + createdAt.format(orderIdFormatter) + String.format("%03d", index);
         order.setOrderId(customId);
-        System.out.println("Seeder createdAt: " + randomDateTime + " | OrderId: " + customId);
+//        System.out.println("Seeder createdAt: " + randomDateTime + " | OrderId: " + customId);
         return order;
     }
 

@@ -25,7 +25,7 @@ public class Order {
     @JsonManagedReference
     private List<OrderItem> items = new ArrayList<>();
 
-
+    @PrePersist protected void onCreate() { if (this.createdAt == null) { this.createdAt = LocalDateTime.now(); } }
 
 
     public LocalDateTime getCreatedAt() {
