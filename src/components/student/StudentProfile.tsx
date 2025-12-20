@@ -9,9 +9,9 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Progress } from '../ui/progress';
-import { User, Mail, Phone, MapPin, Calendar, BookOpen, Award, Edit, Save, X } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, BookOpen, Award, Edit, Save, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getUserProfile } from '../../services/authService';
+import { getUserProfile, updateUserProfile } from '../../services/authService';
 
 interface ClientUser {
   id: number;
@@ -32,7 +32,9 @@ const emptyProfile = {
 
 export default function StudentProfile() {
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [profileData, setProfileData] = useState({ ...emptyProfile });
+  const [originalData, setOriginalData] = useState({ ...emptyProfile });
   const [loading, setLoading] = useState(true);
 
   const storedUser = useMemo(() => {
@@ -60,15 +62,17 @@ export default function StudentProfile() {
       }
       try {
         const data = await getUserProfile(token);
-        setProfileData({
+        const profileInfo = {
           fullName: data.username ?? '',
           email: data.email ?? '',
           phone: data.phone ?? '',
           address: data.address ?? '',
           dateOfBirth: data.dateOfBirth ?? '',
           bio: data.bio ?? '',
-          avatar: '',
-        });
+          avatar: data.avatar ?? '',
+        };
+        setProfileData(profileInfo);
+        setOriginalData(profileInfo);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Không thể tải thông tin người dùng';
         toast.error(message);
@@ -92,12 +96,47 @@ export default function StudentProfile() {
     { id: 3, name: '10 bài tập hoàn thành', icon: '📝', date: '2024-03-10' },
   ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast.success('Cập nhật hồ sơ thành công!');
+  const handleSave = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updatedData = await updateUserProfile(token, {
+        username: profileData.fullName,
+        phone: profileData.phone,
+        address: profileData.address,
+        dateOfBirth: profileData.dateOfBirth,
+        bio: profileData.bio,
+        avatar: profileData.avatar,
+      });
+      
+      const newProfileData = {
+        fullName: updatedData.username ?? '',
+        email: updatedData.email ?? '',
+        phone: updatedData.phone ?? '',
+        address: updatedData.address ?? '',
+        dateOfBirth: updatedData.dateOfBirth ?? '',
+        bio: updatedData.bio ?? '',
+        avatar: updatedData.avatar ?? '',
+      };
+      setProfileData(newProfileData);
+      setOriginalData(newProfileData);
+      setIsEditing(false);
+      toast.success('Cập nhật hồ sơ thành công!');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể cập nhật hồ sơ';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
+    setProfileData({ ...originalData });
     setIsEditing(false);
   };
 
@@ -129,11 +168,11 @@ export default function StudentProfile() {
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" />
-              Lưu
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              {isSaving ? 'Đang lưu...' : 'Lưu'}
             </Button>
-            <Button variant="outline" onClick={handleCancel}>
+            <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
               <X className="w-4 h-4 mr-2" />
               Hủy
             </Button>

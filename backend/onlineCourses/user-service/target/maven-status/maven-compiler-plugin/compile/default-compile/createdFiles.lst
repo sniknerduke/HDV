@@ -9,6 +9,8 @@ com\example\onlineCourses\clients\CourseClient.class
 com\example\onlineCourses\model\VerificationCode.class
 com\example\onlineCourses\service\OrderService.class
 com\example\onlineCourses\DTO\LoginRequestDTO.class
+com\example\onlineCourses\repository\UserProfileRepository.class
+com\example\onlineCourses\DTO\UserProfileDTO.class
 com\example\onlineCourses\service\CartService.class
 com\example\onlineCourses\service\UserService.class
 com\example\onlineCourses\jwt\JwtUtil.class
@@ -31,3 +33,4 @@ com\example\onlineCourses\DTO\CartResponse.class
 com\example\onlineCourses\repository\UserRepository.class
 com\example\onlineCourses\service\CustomUserDetailsService.class
 com\example\onlineCourses\DTO\CourseDTO.class
+com\example\onlineCourses\model\UserProfile.class

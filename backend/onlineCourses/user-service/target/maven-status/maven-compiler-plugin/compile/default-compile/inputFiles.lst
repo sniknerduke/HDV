@@ -6,6 +6,7 @@ D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\DTO\CartResponse.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\controller\OrderPaymentController.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\DTO\OrderStatusUpdateRequest.java
+D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\model\UserProfile.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\repository\EnrollmentRepository.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\DTO\LoginRequestDTO.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\controller\AuthController.java
@@ -32,9 +33,11 @@ D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\jwt\JwtService.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\DTO\SalesSummaryDTO.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\jwt\JwtAuthenticationFilter.java
+D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\repository\UserProfileRepository.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\model\DatabaseSeeder.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\controller\client\LessonClient.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\DTO\CourseDTO.java
+D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\DTO\UserProfileDTO.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\mapper\UserMapper.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\repository\VerificationCodeRepository.java
 D:\College stuff\Education Platform UI Design\backend\onlineCourses\user-service\src\main\java\com\example\onlineCourses\controller\CartController.java
