@@ -40,20 +40,18 @@ public class CartController {
         return ResponseEntity.ok(response);
     }
 
-
-    //    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @PostMapping("/add-to-cart/{courseId}")
     public ResponseEntity<CartItem> addToCart(
             @PathVariable Long courseId,
             @RequestHeader("X-User-Id") Long userId
     ) {
-//        cartService.addToCart(userId, courseId);
         CartItem item = cartService.addToCart(userId, courseId);
 //        return ResponseEntity.ok(Map.of("message", "Added", "userId", userId, "courseId", courseId));
         return ResponseEntity.ok(item);
     }
 
-    //    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/{cartItemId}")
     public ResponseEntity<?> removeItem(
             @PathVariable Long cartItemId
@@ -63,15 +61,6 @@ public class CartController {
         return ResponseEntity.ok("Removed");
     }
 
-//    //    @PreAuthorize("hasRole('USER')")
-//    @DeleteMapping("/{courseId}")
-//    public ResponseEntity<?> removeItem(
-//            @PathVariable Long courseId,
-//            @RequestParam Long userId) {
-//
-//        cartService.removeItem(courseId, userId);
-//        return ResponseEntity.ok("Removed");
-//    }
 
 //    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/clear")
@@ -80,13 +69,8 @@ public class CartController {
         return ResponseEntity.ok("Cleared");
     }
 
-//    @PreAuthorize("hasRole('USER')")
-    @PostMapping("/checkout")
-    public Order checkout(@RequestParam Long userId) {
-        return cartService.checkout(userId);
-    }
 
-//    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/total")
     public long getTotal(@RequestParam Long userId) {
         return cartService.calculateTotal(userId);
@@ -102,30 +86,7 @@ public class CartController {
 //    public void decrease(@PathVariable Long cartItemId) {
 //        cartService.decrease(cartItemId);
 //    }
-//    @GetMapping
-//    @PreAuthorize("hasRole('USER')")
-//    public ResponseEntity<List<CartItemDTO>> getCart() {
-//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        String username = auth.getName();
-//        Long userId = userService.findIdByUsername(username);
-//        return ResponseEntity.ok(cartService.getCartItems(userId));
-//    }
 
-//    @PostMapping("/add-to-cart")
-//    @PreAuthorize("hasRole('USER')")
-//    public ResponseEntity<String> addCourseToCart(@RequestParam Long userId, @RequestParam Long courseId) {
-//        cartService.addCourseToCart(userId, courseId);
-//        return ResponseEntity.ok("Course added to cart");
-//    }
-//
-//    @DeleteMapping("/remove-from-cart")
-//    @PreAuthorize("hasRole('USER')")
-//    public ResponseEntity<String> removeCourseFromCart(@RequestParam Long userId, @RequestParam Long courseId) {
-//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        System.out.println("Auth: " + auth);
-//        cartService.removeCourseFromCart(userId, courseId);
-//        return ResponseEntity.ok("Course removed from cart");
-//    }
 
     @DeleteMapping("/remove-from-cart")
 //    @PreAuthorize("hasRole('USER')")
@@ -142,21 +103,6 @@ public class CartController {
 
         cartItemRepository.delete(item.get());
         return ResponseEntity.ok("Course removed");
-//        Optional<CartItem> item = cartItemRepository.findByUserIdAndCourseId(userId, courseId);
-//        if (item.isEmpty()) {
-//            throw new IllegalArgumentException("Không tìm thấy item trong giỏ hàng");
-//        }
-//        cartItemRepository.delete(item.get());
-//        try {
-////            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-////            String username = auth.getName();
-////            Long userId = userService.findIdByUsername(username); // lấy userId từ username trong token
-//            cartService.removeCourseFromCart(userId, courseId);
-//            // logic xóa
-//            return ResponseEntity.ok("Course removed");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Xóa thất bại: " + e.getMessage());
-//        }
     }
 
 

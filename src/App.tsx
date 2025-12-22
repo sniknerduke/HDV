@@ -327,10 +327,10 @@ export default function App() {
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-2 focus:outline-none">
                     <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
-                      {user === 'student' ? 'S' : user === 'teacher' ? 'T' : 'A'}
+                      {user === 'student' ? 'S' : user === 'teacher' ? 'T' : 'M'}
                     </div>
                     <span className="hidden md:block text-sm font-medium">
-                      {user === 'student' ? 'Học sinh' : user === 'teacher' ? 'Giáo viên' : 'Admin'}
+                      {user === 'student' ? 'Học sinh' : user === 'teacher' ? 'Giáo viên' : 'Quản lý'}
                     </span>
                   </button>
                 </DropdownMenuTrigger>

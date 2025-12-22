@@ -55,6 +55,7 @@ public class OrderController {
 
         // Header row
         Row header = sheet.createRow(0);
+        header.createCell(0).setCellValue("ID");
         header.createCell(0).setCellValue("Order ID");
         header.createCell(1).setCellValue("User ID");
         header.createCell(2).setCellValue("Amount");
@@ -67,11 +68,12 @@ public class OrderController {
         int rowIdx = 1;
         for (Order order : orders) {
             Row row = sheet.createRow(rowIdx++);
-            row.createCell(0).setCellValue(order.getOrderId());
-            row.createCell(1).setCellValue(order.getUserId());
-            row.createCell(2).setCellValue(order.getAmount());
-            row.createCell(3).setCellValue(order.getStatus());
-            row.createCell(4).setCellValue(order.getCreatedAt().toString());
+            row.createCell(0).setCellValue(order.getId());
+            row.createCell(1).setCellValue(order.getOrderId());
+            row.createCell(2).setCellValue(order.getUserId());
+            row.createCell(3).setCellValue(order.getAmount());
+            row.createCell(4).setCellValue(order.getStatus());
+            row.createCell(5).setCellValue(order.getCreatedAt().toString());
         }
 
         // Ghi ra response output stream
@@ -145,15 +147,6 @@ public class OrderController {
     @PostMapping("/update-status")
 //    public ResponseEntity<Void> updateStatus(@RequestBody Map<String, Object> payload, @RequestHeader Map<String, String> headers) {
     public ResponseEntity<Void> updateStatus(@RequestBody OrderStatusUpdateRequest request) {
-        // Log headers
-//        System.out.println("Request Headers: " + headers);
-        // Log payload
-//        System.out.println("Request Body: " + payload);
-//
-//        String orderId = (String) payload.get("orderId");
-//        String status = (String) payload.get("status");
-
-//        orderService.updateStatus(orderId, status);
         orderService.updateStatus(request.getOrderId(), request.getStatus());
         return ResponseEntity.ok().build();
     }

@@ -5,7 +5,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '.
 import { Input } from '../ui/input'
 import { Badge } from '../ui/badge'
 
-import { getOrdersPage, getOrdersDetail, filterOrders, search } from '../../services/orderService';
+// import { FileDown } from "lucide-react";
+import { getOrdersPage, getOrdersDetail, filterOrders, search, exportOrders } from '../../services/orderService';
 import type { Order, OrderItemDTO } from '../../services/orderService';
 
 import {
@@ -125,12 +126,12 @@ export default function OrderManagement() {
     }
   }
 
-  const kpis = [
-    { label: 'Tổng doanh thu', value: '1.28 tỷ', icon: DollarSign, color: 'text-green-600' },
-    { label: 'Đơn hàng mới', value: '42', icon: ShoppingCart, color: 'text-blue-600' },
-    { label: 'Đang chờ', value: '12', icon: Clock, color: 'text-yellow-600' },
-    { label: 'Tỷ lệ hủy', value: '3.2%', icon: XCircle, color: 'text-red-600' },
-  ]
+//   const kpis = [
+//     { label: 'Tổng doanh thu', value: '1.28 tỷ', icon: DollarSign, color: 'text-green-600' },
+//     { label: 'Đơn hàng mới', value: '42', icon: ShoppingCart, color: 'text-blue-600' },
+//     { label: 'Đang chờ', value: '12', icon: Clock, color: 'text-yellow-600' },
+//     { label: 'Tỷ lệ hủy', value: '3.2%', icon: XCircle, color: 'text-red-600' },
+//   ]
 
   return (
     <div className="p-8">
@@ -141,7 +142,7 @@ export default function OrderManagement() {
           <p className="text-gray-500 text-sm">Theo dõi và quản lý các giao dịch trên hệ thống</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => alert('Xuất báo cáo...')} className="gap-2">
+          <Button variant="outline" onClick={exportOrders} className="gap-2">
             <FileDown className="w-4 h-4" /> Xuất Excel
           </Button>
           <Button onClick={refresh} disabled={loading}>
@@ -151,21 +152,7 @@ export default function OrderManagement() {
       </div>
 
       {/* KPI Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        {kpis.map(kpi => (
-          <Card key={kpi.label}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">{kpi.label}</p>
-                  <p className="text-2xl font-semibold">{kpi.value}</p>
-                </div>
-                <kpi.icon className={`w-10 h-10 opacity-20 ${kpi.color}`} />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+
 
       {/* Filters */}
       <Card className="mb-6">
@@ -177,7 +164,7 @@ export default function OrderManagement() {
               </select>
 
 
-              <Input placeholder="Nhập số..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+              <Input placeholder="Tìm kiếm..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={async (e) => {
                   if (e.key === "Enter") {
                     try {

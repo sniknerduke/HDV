@@ -18,6 +18,24 @@ export interface Order {
 //   return res.data;
 // }
 
+export async function exportOrders(): Promise<void> {
+  const res = await api.get("/orders/export", {
+    responseType: "blob", // quan trọng: để nhận file binary
+  });
+
+  // Tạo URL từ blob
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+
+  // Tạo thẻ <a> để tải file
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "orders.xlsx"); // tên file tải về
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+
 export async function getOrderById(id: number): Promise<Order> {
   const res = await api.get(`/orders/id/${id}`);
   return res.data;
@@ -77,17 +95,6 @@ export async function checkout(): Promise<Order> {
   const res = await api.post(`/orders/checkout`);
   return res.data;
 }
-
-// // Đánh dấu đơn hàng đã thanh toán
-// export async function markPaid(orderId: number): Promise<string> {
-//   const token = localStorage.getItem("token");
-//   const res = await axios.post(`${API_BASE}/${orderId}/paid`, {}, {
-//     headers: {
-//       Authorization: `Bearer ${token}`
-//     }
-//   });
-//   return res.data;
-// }
 
 // Lấy danh sách đơn hàng của user
 export async function getOrders(userId: number): Promise<Order[]> {
