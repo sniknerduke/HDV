@@ -1,12 +1,15 @@
 package com.example.onlineCourses.service;
 import com.example.onlineCourses.DTO.UserDTO;
+import com.example.onlineCourses.DTO.UserProfileDTO;
 import com.example.onlineCourses.mapper.UserMapper;
 import com.example.onlineCourses.model.User;
+import com.example.onlineCourses.model.UserProfile;
 import com.example.onlineCourses.model.VerificationCode;
 import com.example.onlineCourses.model.VerificationCode;
 import com.example.onlineCourses.repository.CartItemRepository;
 import com.example.onlineCourses.repository.EnrollmentRepository;
 import com.example.onlineCourses.repository.UserRepository;
+import com.example.onlineCourses.repository.UserProfileRepository;
 import com.example.onlineCourses.repository.VerificationCodeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
@@ -41,6 +44,9 @@ public class UserService {
 
     @Autowired
     private CartItemRepository cartItemRepo;
+
+    @Autowired
+    private UserProfileRepository userProfileRepo;
 
 
     public boolean emailExists(String email) {
@@ -163,5 +169,65 @@ public class UserService {
         User user = userRepo.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
         return user.getId();
+    }
+
+    public UserProfileDTO getUserProfileById(Long userId) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        
+        UserProfile profile = userProfileRepo.findById(userId)
+                .orElse(null);
+        
+        UserProfileDTO dto = new UserProfileDTO();
+        dto.setId(user.getId());
+        dto.setEmail(user.getEmail());
+        dto.setUsername(user.getUsername());
+        dto.setRole(user.getRole() != null ? user.getRole().name() : null);
+        
+        if (profile != null) {
+            dto.setPhone(profile.getPhone());
+            dto.setAddress(profile.getAddress());
+            dto.setDateOfBirth(profile.getDateOfBirth());
+            dto.setBio(profile.getBio());
+            dto.setAvatar(profile.getAvatar());
+            dto.setSpecialization(profile.getSpecialization());
+            dto.setEducation(profile.getEducation());
+            dto.setExperience(profile.getExperience());
+        }
+        
+        return dto;
+    }
+
+    @Transactional
+    public UserProfileDTO updateUserProfile(Long userId, UserProfileDTO dto) {
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        
+        // Update username if provided
+        if (dto.getUsername() != null && !dto.getUsername().isEmpty()) {
+            user.setUsername(dto.getUsername());
+            userRepo.save(user);
+        }
+        
+        // Get or create profile
+        UserProfile profile = userProfileRepo.findById(userId).orElse(null);
+        
+        if (profile == null) {
+            profile = new UserProfile(userId);
+        }
+        
+        // Update profile fields
+        if (dto.getPhone() != null) profile.setPhone(dto.getPhone());
+        if (dto.getAddress() != null) profile.setAddress(dto.getAddress());
+        if (dto.getDateOfBirth() != null) profile.setDateOfBirth(dto.getDateOfBirth());
+        if (dto.getBio() != null) profile.setBio(dto.getBio());
+        if (dto.getAvatar() != null) profile.setAvatar(dto.getAvatar());
+        if (dto.getSpecialization() != null) profile.setSpecialization(dto.getSpecialization());
+        if (dto.getEducation() != null) profile.setEducation(dto.getEducation());
+        if (dto.getExperience() != null) profile.setExperience(dto.getExperience());
+        
+        userProfileRepo.save(profile);
+        
+        return getUserProfileById(userId);
     }
 }

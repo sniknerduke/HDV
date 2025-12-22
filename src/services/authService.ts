@@ -24,6 +24,22 @@ interface DetailedUserResponse extends UserResponse {
   address?: string;
   dateOfBirth?: string;
   bio?: string;
+  avatar?: string;
+  specialization?: string;
+  education?: string;
+  experience?: string;
+}
+
+export interface UpdateProfilePayload {
+  username?: string;
+  phone?: string;
+  address?: string;
+  dateOfBirth?: string;
+  bio?: string;
+  avatar?: string;
+  specialization?: string;
+  education?: string;
+  experience?: string;
 }
 
 interface AuthResponse {
@@ -86,6 +102,18 @@ export const getUserProfile = async (token: string) => {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+  return handleResponse<DetailedUserResponse>(response);
+};
+
+export const updateUserProfile = async (token: string, payload: UpdateProfilePayload) => {
+  const response = await fetch(`${API_BASE}/api/users/me/profile`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
   });
   return handleResponse<DetailedUserResponse>(response);
 };

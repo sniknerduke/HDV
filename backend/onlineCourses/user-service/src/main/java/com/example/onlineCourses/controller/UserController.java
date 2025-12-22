@@ -2,6 +2,7 @@ package com.example.onlineCourses.controller;
 
 import com.example.onlineCourses.DTO.LoginRequestDTO;
 import com.example.onlineCourses.DTO.UserDTO;
+import com.example.onlineCourses.DTO.UserProfileDTO;
 import com.example.onlineCourses.jwt.JwtService;
 import com.example.onlineCourses.mapper.UserMapper;
 import com.example.onlineCourses.model.User;
@@ -106,7 +107,7 @@ public class UserController {
     // Current authenticated user's profile
     @PreAuthorize("hasAnyRole('USER','STAFF','MANAGER','ADMIN')")
     @GetMapping("/me")
-    public ResponseEntity<UserDTO> getMe(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<UserProfileDTO> getMe(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -115,7 +116,24 @@ public class UserController {
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(userService.getUserById(userId));
+        return ResponseEntity.ok(userService.getUserProfileById(userId));
+    }
+
+    // Update current user's profile
+    @PreAuthorize("hasAnyRole('USER','STAFF','MANAGER','ADMIN')")
+    @PutMapping("/me/profile")
+    public ResponseEntity<UserProfileDTO> updateMyProfile(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestBody UserProfileDTO profileDTO) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        String token = authHeader.substring(7);
+        Long userId = jwtService.extractUserId(token);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(userService.updateUserProfile(userId, profileDTO));
     }
 
     // Lấy người dùng theo ID

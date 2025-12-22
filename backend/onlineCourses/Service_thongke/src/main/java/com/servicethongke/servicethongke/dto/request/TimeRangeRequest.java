@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Setter
 
 
-//@TimeRangeValid // custom class-level validator (được định nghĩa bên dưới)
+@TimeRangeValid // custom class-level validator (được định nghĩa bên dưới)
 public class TimeRangeRequest {
     @NotNull(message = "start không được để trống (format: yyyy-MM-dd")
     @JsonFormat(pattern = "yyyy-MM-dd")

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -8,23 +8,86 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { User, Mail, Phone, MapPin, Calendar, BookOpen, Award, Edit, Save, X, Star, Users, Clock } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Calendar, BookOpen, Award, Edit, Save, X, Star, Users, Clock, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getUserProfile, updateUserProfile } from '../../services/authService';
+
+interface ClientUser {
+  id: number;
+  email: string;
+  username: string;
+  role?: string;
+}
+
+const emptyProfile = {
+  fullName: '',
+  email: '',
+  phone: '',
+  address: '',
+  dateOfBirth: '',
+  bio: '',
+  specialization: '',
+  education: '',
+  experience: '',
+  avatar: '',
+};
 
 export default function TeacherProfile() {
   const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState({
-    fullName: 'Nguyễn Thị B',
-    email: 'teacher@example.com',
-    phone: '0987654321',
-    address: 'Hà Nội, Việt Nam',
-    dateOfBirth: '1985-05-15',
-    bio: 'Giáo viên có 10 năm kinh nghiệm giảng dạy lập trình web và mobile. Đam mê chia sẻ kiến thức và giúp học sinh phát triển.',
-    specialization: 'Lập trình Web, Mobile Development',
-    education: 'Thạc sĩ Khoa học Máy tính - ĐH Bách Khoa Hà Nội',
-    experience: '10 năm',
-    avatar: ''
-  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [profileData, setProfileData] = useState({ ...emptyProfile });
+  const [originalData, setOriginalData] = useState({ ...emptyProfile });
+  const [loading, setLoading] = useState(true);
+
+  const storedUser = useMemo(() => {
+    const raw = localStorage.getItem('auth_user');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as ClientUser;
+    } catch (error) {
+      console.warn('Không thể parse auth_user', error);
+      return null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!storedUser) {
+        setLoading(false);
+        return;
+      }
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        setLoading(false);
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        return;
+      }
+      try {
+        const data = await getUserProfile(token);
+        const profileInfo = {
+          fullName: data.username ?? '',
+          email: data.email ?? '',
+          phone: data.phone ?? '',
+          address: data.address ?? '',
+          dateOfBirth: data.dateOfBirth ?? '',
+          bio: data.bio ?? '',
+          specialization: data.specialization ?? '',
+          education: data.education ?? '',
+          experience: data.experience ?? '',
+          avatar: data.avatar ?? '',
+        };
+        setProfileData(profileInfo);
+        setOriginalData(profileInfo);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Không thể tải thông tin người dùng';
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [storedUser]);
 
   const teachingCourses = [
     { id: 1, name: 'React từ cơ bản đến nâng cao', students: 245, rating: 4.8 },
@@ -44,14 +107,72 @@ export default function TeacherProfile() {
     { id: 3, name: 'Microsoft Certified Developer', issuer: 'Microsoft', year: '2021' },
   ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast.success('Cập nhật hồ sơ thành công!');
+  const handleSave = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const updatedData = await updateUserProfile(token, {
+        username: profileData.fullName,
+        phone: profileData.phone,
+        address: profileData.address,
+        dateOfBirth: profileData.dateOfBirth,
+        bio: profileData.bio,
+        specialization: profileData.specialization,
+        education: profileData.education,
+        experience: profileData.experience,
+        avatar: profileData.avatar,
+      });
+      
+      const newProfileData = {
+        fullName: updatedData.username ?? '',
+        email: updatedData.email ?? '',
+        phone: updatedData.phone ?? '',
+        address: updatedData.address ?? '',
+        dateOfBirth: updatedData.dateOfBirth ?? '',
+        bio: updatedData.bio ?? '',
+        specialization: updatedData.specialization ?? '',
+        education: updatedData.education ?? '',
+        experience: updatedData.experience ?? '',
+        avatar: updatedData.avatar ?? '',
+      };
+      setProfileData(newProfileData);
+      setOriginalData(newProfileData);
+      setIsEditing(false);
+      toast.success('Cập nhật hồ sơ thành công!');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Không thể cập nhật hồ sơ';
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
+    setProfileData({ ...originalData });
     setIsEditing(false);
   };
+
+  if (loading) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <p className="text-center text-gray-600">Đang tải thông tin hồ sơ...</p>
+      </div>
+    );
+  }
+
+  if (!storedUser) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto text-center space-y-4">
+        <h1>Hồ sơ giảng viên</h1>
+        <p className="text-gray-600">Bạn cần đăng nhập để xem thông tin hồ sơ.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
@@ -64,11 +185,11 @@ export default function TeacherProfile() {
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" />
-              Lưu
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              {isSaving ? 'Đang lưu...' : 'Lưu'}
             </Button>
-            <Button variant="outline" onClick={handleCancel}>
+            <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
               <X className="w-4 h-4 mr-2" />
               Hủy
             </Button>
@@ -84,17 +205,17 @@ export default function TeacherProfile() {
               <div className="flex flex-col items-center text-center">
                 <Avatar className="w-32 h-32 mb-4">
                   <AvatarImage src={profileData.avatar} />
-                  <AvatarFallback className="text-3xl">{profileData.fullName.charAt(0)}</AvatarFallback>
+                  <AvatarFallback className="text-3xl">{profileData.fullName.charAt(0) || 'T'}</AvatarFallback>
                 </Avatar>
                 {isEditing ? (
                   <Button variant="outline" size="sm" className="mb-4">
                     Đổi ảnh đại diện
                   </Button>
                 ) : null}
-                <h2 className="mb-2">{profileData.fullName}</h2>
+                <h2 className="mb-2">{profileData.fullName || 'Giảng viên'}</h2>
                 <Badge className="mb-2">Giảng viên</Badge>
-                <Badge variant="outline" className="mb-4">{profileData.specialization}</Badge>
-                <p className="text-gray-600 text-sm">{profileData.bio}</p>
+                <Badge variant="outline" className="mb-4">{profileData.specialization || 'Chưa cập nhật'}</Badge>
+                <p className="text-gray-600 text-sm">{profileData.bio || 'Chưa có mô tả'}</p>
               </div>
               
               <Separator className="my-6" />
@@ -102,19 +223,19 @@ export default function TeacherProfile() {
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-sm">
                   <Mail className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700">{profileData.email}</span>
+                  <span className="text-gray-700">{profileData.email || 'Chưa cập nhật'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Phone className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700">{profileData.phone}</span>
+                  <span className="text-gray-700">{profileData.phone || 'Chưa cập nhật'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <MapPin className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700">{profileData.address}</span>
+                  <span className="text-gray-700">{profileData.address || 'Chưa cập nhật'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <Clock className="w-4 h-4 text-gray-500" />
-                  <span className="text-gray-700">{profileData.experience} kinh nghiệm</span>
+                  <span className="text-gray-700">{profileData.experience ? `${profileData.experience} kinh nghiệm` : 'Chưa cập nhật'}</span>
                 </div>
               </div>
             </CardContent>
