@@ -11,7 +11,9 @@ import com.example.onlineCourses.repository.CartItemRepository;
 import com.example.onlineCourses.repository.OrderRepository;
 import com.example.onlineCourses.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 
 import java.util.ArrayList;
@@ -77,6 +79,7 @@ public class CartService {
         return new CartResponse(itemDtos, total, itemCount);
     }
 
+    //test
     public CartItem addToCart(Long userId, Long courseId) {
 
         // Kiểm tra cart item đã tồn tại?
@@ -90,6 +93,10 @@ public class CartService {
             return item;
         }
 
+        CourseDTO course = courseClient.getCourseById(courseId);
+        if (course == null) {
+            throw new IllegalArgumentException("Course not found");
+        }
         // Chưa có → thêm mới
         CartItem newItem = new CartItem();
         newItem.setUserId(userId);
@@ -102,14 +109,14 @@ public class CartService {
 
     public void removeItem(Long cartItemId) {
         CartItem item = cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new RuntimeException("Item not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
         cartItemRepository.delete(item);
     }
 
-//    public void removeItem(Long courseId, Long userId) {
-//        CartItem item = cartItemRepository.findByUserIdAndCourseId(userId, courseId)
+
+//    public void removeItem(Long cartItemId) {
+//        CartItem item = cartItemRepository.findById(cartItemId)
 //                .orElseThrow(() -> new RuntimeException("Item not found"));
-//
 //        cartItemRepository.delete(item);
 //    }
 

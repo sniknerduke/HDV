@@ -123,6 +123,28 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+//    @GetMapping("/id/{id}")
+//    public ResponseEntity<?> getOrderById(@PathVariable Long id) {
+//        try {
+//            Order order = orderService.getOrderById(id);
+//            if (order == null) {
+//                // Không tìm thấy order
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                        .body("Order with id " + id + " not found");
+//            }
+//            return ResponseEntity.ok(order);
+//        } catch (IllegalArgumentException ex) {
+//            // Ví dụ service ném lỗi khi id không hợp lệ
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body("Invalid order id: " + id);
+//        } catch (Exception ex) {
+//            // Bắt các lỗi khác
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body("Error retrieving order: " + ex.getMessage());
+//        }
+//    }
+
+
     @GetMapping("/{orderId}")
     public ResponseEntity<Order> getOrderByOrderId(@PathVariable String orderId) {
         return orderRepo.findByOrderId(orderId)

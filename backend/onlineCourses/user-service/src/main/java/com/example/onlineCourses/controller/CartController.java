@@ -41,21 +41,45 @@ public class CartController {
     }
 
     @PreAuthorize("hasRole('USER')")
+//    @PostMapping("/add-to-cart/{courseId}")
+//    public ResponseEntity<CartItem> addToCart(
+//            @PathVariable Long courseId,
+//            @RequestHeader("X-User-Id") Long userId
+//    ) {
+//        CartItem item = cartService.addToCart(userId, courseId);
+////        return ResponseEntity.ok(Map.of("message", "Added", "userId", userId, "courseId", courseId));
+//        return ResponseEntity.ok(item);
+//    }
     @PostMapping("/add-to-cart/{courseId}")
-    public ResponseEntity<CartItem> addToCart(
+    public ResponseEntity<?> addToCart(
             @PathVariable Long courseId,
             @RequestHeader("X-User-Id") Long userId
     ) {
-        CartItem item = cartService.addToCart(userId, courseId);
-//        return ResponseEntity.ok(Map.of("message", "Added", "userId", userId, "courseId", courseId));
-        return ResponseEntity.ok(item);
+        try {
+            CartItem item = cartService.addToCart(userId, courseId);
+            return ResponseEntity.ok(item);
+        } catch (IllegalArgumentException e) {
+            // ví dụ: courseId không tồn tại
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Invalid courseId",
+                    "message", e.getMessage()
+            ));
+        } catch (RuntimeException e) {
+            // các lỗi khác
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "error", "Server error",
+                    "message", e.getMessage()
+            ));
+        }
     }
 
-    @PreAuthorize("hasRole('USER')")
+
+//    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/{cartItemId}")
     public ResponseEntity<?> removeItem(
-            @PathVariable Long cartItemId
-            ) {
+            @PathVariable Long cartItemId,
+            @RequestHeader("X-User-Id") Long userId
+    ) {
 
         cartService.removeItem(cartItemId);
         return ResponseEntity.ok("Removed");
@@ -91,9 +115,6 @@ public class CartController {
     @DeleteMapping("/remove-from-cart")
 //    @PreAuthorize("hasRole('USER')")
     public ResponseEntity<String> removeCourseFromCart(@RequestParam Long userId, @RequestParam Long courseId) {
-//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//        String username = auth.getName();
-//        Long userId = userService.findIdByUsername(username);
         //lấy id từ token
 
         Optional<CartItem> item = cartItemRepository.findByUserIdAndCourseId(userId, courseId);

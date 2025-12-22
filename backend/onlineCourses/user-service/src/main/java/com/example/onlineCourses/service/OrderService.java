@@ -46,7 +46,7 @@ public class OrderService {
     public Order checkout(Long userId) {
         List<CartItem> cartItems = cartItemRepo.findByUserId(userId);
         if (cartItems.isEmpty()) {
-            throw new RuntimeException("Giỏ hàng đang trống");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Giỏ hàng đang trống");
         }
 
         long total = 0;
