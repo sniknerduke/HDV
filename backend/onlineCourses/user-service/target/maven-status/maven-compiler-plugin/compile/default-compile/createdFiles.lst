@@ -9,6 +9,7 @@ com\example\onlineCourses\clients\CourseClient.class
 com\example\onlineCourses\model\VerificationCode.class
 com\example\onlineCourses\service\OrderService.class
 com\example\onlineCourses\DTO\LoginRequestDTO.class
+com\example\onlineCourses\controller\GlobalExceptionHandler.class
 com\example\onlineCourses\repository\UserProfileRepository.class
 com\example\onlineCourses\DTO\UserProfileDTO.class
 com\example\onlineCourses\service\CartService.class

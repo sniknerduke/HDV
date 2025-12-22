@@ -27,10 +27,10 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final DateTimeFormatter orderIdFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     // Số lượng bản ghi muốn tạo
-    private final int NUMBER_OF_ORDERS = 500;
-    private final int MAX_ITEMS_PER_ORDER = 5; // Tối đa 5 item/order
-    private final int NUMBER_OF_USERS = 100;
-    private final int NUMBER_OF_COURSES = 500;
+    private final int NUMBER_OF_ORDERS = 100;
+    private final int MAX_ITEMS_PER_ORDER = 2; // Tối đa 5 item/order
+    private final int NUMBER_OF_USERS = 20;
+    private final int NUMBER_OF_COURSES = 160;
 
     public DatabaseSeeder(EntityManager entityManager, PasswordEncoder passwordEncoder) {
         this.entityManager = entityManager;
@@ -49,12 +49,12 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         System.out.println("--- Bắt đầu Seeding Dữ liệu Demo ---");
 
-//         cleanUpOldData(); // Bắt buộc phải chạy trước
-        // // 1. Chạy Seeding User trước
-        // seedUsers();
-//         seedOrdersAndOrderItems();
+        cleanUpOldData(); // Bắt buộc phải chạy trước
+        // 1. Chạy Seeding User trước
+        seedUsers();
+        seedOrdersAndOrderItems();
 
-//        System.out.println("--- Seeding Hoàn tất! Đã tạo " + NUMBER_OF_ORDERS + " đơn hàng ---");
+       System.out.println("--- Seeding Hoàn tất! Đã tạo " + NUMBER_OF_ORDERS + " đơn hàng ---");
     }
 //...
     private void cleanUpOldData() {
@@ -203,7 +203,7 @@ private void seedOrdersAndOrderItems() {
 
             // Cộng thêm số phút ngẫu nhiên nhưng tăng dần theo index
             // Ví dụ: mỗi order cách nhau 1–1440 phút (tối đa 1 ngày)
-            long randomMinutes = faker.number().numberBetween(1, 1440);
+            long randomMinutes = faker.number().numberBetween(10000, 32440);
             LocalDateTime createdAt = baseDate.plusMinutes(index * randomMinutes);
 
             order.setCreatedAt(createdAt);
