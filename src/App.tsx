@@ -219,7 +219,7 @@ export default function App() {
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center gap-2">
                 <GraduationCap className="w-8 h-8 text-blue-600" />
-                <span className="font-bold text-xl">EduPlatform</span>
+                <span className="font-bold text-xl">EduSmart</span>
               </div>
               <div className="hidden md:flex gap-6">
                 <button onClick={() => navigateTo('home')} className="hover:text-blue-600">
@@ -460,7 +460,7 @@ export default function App() {
     if (currentPage === 'payment-return') return <PaymentReturn onNavigate={navigateTo} />;
     if (currentPage === 'transaction-history') return <TransactionHistory onNavigate={navigateTo} />;
     
-    if (currentPage === 'teacher-dashboard') return <TeacherDashboard onNavigate={navigateTo} />;
+    if (currentPage === 'teacher-dashboard') return <TeacherDashboard onNavigate={navigateTo} token={localStorage.getItem('auth_token')} />;
     if (currentPage === 'manage-courses') return (
       <ManageCourses onOpenCourse={(course: any) => { setSelectedCourse(course); localStorage.setItem('last_course_id', String(course.id)); navigateTo('teacher-course-content'); }} />
     );
