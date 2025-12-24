@@ -1,0 +1,349 @@
+BTL - Defense Demo & Checklist (Focus: Course + Lesson Management)
+Date: 2025-12-23
+
+0) How to use this sheet (A5 style)
+- Nếu bị hỏi bất kỳ phần nào: trả lời theo khung: Mục tiêu -> Kiến trúc -> Data model -> API/Flow -> Bảo mật -> Edge cases -> Hạn chế -> Hướng phát triển.
+- Ưu tiên nói đúng các endpoint thật + role requirement.
+
+1) Project quick architecture (what to say in 20s)
+- Frontend: React + Vite + TypeScript + Tailwind + Radix/shadcn + axios.
+- Backend: Spring Boot microservices + Eureka + Spring Cloud Gateway + JWT + Redis rate limiter.
+- FE gọi qua gateway: http://localhost:9090/api/*
+- Gateway route:
+  - /api/courses/** -> lb://courses
+  - /api/lessons/** -> http://localhost:8083
+  - /api/users/** -> lb://onlineCourses
+  - /api/orders/**, /api/cart/** -> http://localhost:8080
+  - /api/payment/** -> http://localhost:8081
+  - /api/statistics/** -> http://localhost:8084
+
+2) Core data model you MUST remember (Course/Section/Lesson)
+A) courses-service: Course
+- Fields: id, code (unique, not blank), title (not blank), price (>0), duration (>0), description, createdBy.
+- createdBy dùng để lọc: giáo viên chỉ thấy course của mình; admin thấy tất cả.
+
+B) lesson-service: Section
+- Fields: id, courseId, title, description, position (0-based), lessons[]
+- One-to-many Section -> Lesson with cascade + orphanRemoval.
+
+C) lesson-service: Lesson
+- Fields: id, section (many-to-one), title, type (video/text/quiz), videoUrl, position.
+
+3) Authorization (roles) you should say clearly
+- JWT Bearer token; FE axios interceptor auto attach Authorization.
+- Backend uses @PreAuthorize:
+  - Courses create/update/delete/import-playlist: STAFF | MANAGER | ADMIN
+  - Courses list/get: USER | STAFF | MANAGER | ADMIN (public list exists too)
+  - Lesson structure read: USER | STAFF | MANAGER | ADMIN
+  - Lesson/section mutations: STAFF | MANAGER | ADMIN
+
+4) REAL backend endpoints (copy-paste mentally)
+A) CourseController (/api/courses)
+- POST   /public/create               (STAFF|MANAGER|ADMIN) -> create course (owner = authentication.name)
+- PUT    /{id}                        (STAFF|MANAGER|ADMIN) -> update course
+- DELETE /{id}                        (STAFF|MANAGER|ADMIN) -> delete course
+- GET    /list                        (USER|STAFF|MANAGER|ADMIN) -> admin sees all; others filtered by createdBy
+- GET    /public/list                 (public) -> list all courses
+- GET    /{code}                      (USER|STAFF|MANAGER|ADMIN)
+- GET    /id/{id}                     (public in controller)
+- POST   /batch                       (USER|STAFF|MANAGER|ADMIN)
+- GET    /by-ids?ids=1,2,3            (USER|STAFF|MANAGER|ADMIN)
+
+B) PlaylistImportController (/api/courses)
+- POST   /{courseId}/import-playlist  (STAFF|MANAGER|ADMIN)
+  body: { "playlistIds": ["PLxxxx", "PLyyyy"] }
+
+C) LessonContentController (/api/lessons)
+- GET    /course/{courseId}/structure                                   (USER|STAFF|MANAGER|ADMIN)
+- POST   /course/{courseId}/sections                                    (STAFF|MANAGER|ADMIN) body: {title, description?}
+- PUT    /course/{courseId}/sections/{sectionId}                        (STAFF|MANAGER|ADMIN) body: {title, description?}
+- DELETE /course/{courseId}/sections/{sectionId}                        (STAFF|MANAGER|ADMIN)
+- POST   /course/{courseId}/sections/reorder                             (STAFF|MANAGER|ADMIN) body: {fromIndex, toIndex}
+- POST   /course/{courseId}/sections/{sectionId}/lessons                 (STAFF|MANAGER|ADMIN) body: {title, type?, videoUrl?}
+- PUT    /course/{courseId}/sections/{sectionId}/lessons/{lessonId}      (STAFF|MANAGER|ADMIN) body: {title, type?, videoUrl?}
+- DELETE /course/{courseId}/sections/{sectionId}/lessons/{lessonId}      (STAFF|MANAGER|ADMIN)
+- POST   /course/{courseId}/sections/{sectionId}/lessons/reorder         (STAFF|MANAGER|ADMIN) body: {fromIndex, toIndex}
+- DELETE /course/{courseId}                                              (STAFF|MANAGER|ADMIN) cascade delete content (used when deleting course)
+
+D) LessonImportController (/api/lessons)
+- POST   /course/{courseId}/auto-lesson (STAFF|MANAGER|ADMIN)
+  body: {title, type?, videoUrl?}
+  (append lesson to first section or create default)
+
+5) Frontend components for your part (know where things live)
+- Course CRUD (teacher): src/components/teacher/ManageCourses.tsx
+- Course CRUD (admin):   src/components/admin/CourseManagement.tsx
+- Lesson/Section CRUD + reorder: src/components/teacher/TeacherCourseContentManager.tsx
+- Lesson service client: src/services/lessonService.ts
+- Course service client: src/services/courseService.ts
+- YouTube import UI: src/components/ui/YouTubeImportDialog.tsx
+
+6) Demo script (what you can "perform" or explain on paper)
+Goal: Show end-to-end course + lesson management.
+
+Demo A (Clean, no YouTube): Create course -> build structure -> reorder -> verify as student
+1) Login as teacher (STAFF/MANAGER) -> get JWT.
+2) Create course:
+   - FE action: Teacher ManageCourses -> "Tạo khóa học mới"
+   - API: POST /api/courses/public/create
+   - Payload fields you mention: code, title, description, price, duration
+   - Result: courseId
+3) Add sections:
+   - API: POST /api/lessons/course/{courseId}/sections
+   - Create Section 1: "Chương 1: Giới thiệu"
+   - Create Section 2: "Chương 2: ..."
+4) Add lessons:
+   - API: POST /api/lessons/course/{courseId}/sections/{sectionId}/lessons
+   - Create 2 lessons in section 1: type=video, videoUrl=YouTube link
+5) Reorder:
+   - Sections reorder: POST /api/lessons/course/{courseId}/sections/reorder {fromIndex,toIndex}
+   - Lessons reorder:  POST /api/lessons/course/{courseId}/sections/{sectionId}/lessons/reorder
+6) Verify structure:
+   - API: GET /api/lessons/course/{courseId}/structure
+7) (Optional) Verify course list filtering:
+   - As teacher: GET /api/courses/list returns only createdBy=teacher
+   - As admin: GET /api/courses/list returns all
+
+Demo B (Playlist import): Import playlist into existing course
+1) Open existing course (edit mode)
+2) API: POST /api/courses/{courseId}/import-playlist {playlistIds:[...]}
+3) Explain internal idea: courses-service calls lesson-service to auto create lessons from playlist videos.
+4) Note constraint: requires YouTube API key + playlist public.
+
+7) What the teacher can ask (and your short answers)
+Q1: "Vì sao tách courses-service và lesson-service?"
+- Courses: metadata; Lessons: structure/content. Scale independently, avoid heavy joins; course delete triggers cascade via lesson-service endpoint.
+
+Q2: "Làm sao đảm bảo teacher không thấy course của teacher khác?"
+- Backend /api/courses/list: if ROLE_ADMIN -> all; else filter by createdBy = authentication.name.
+
+Q3: "Reorder làm kiểu gì?"
+- Client sends fromIndex/toIndex; server updates position field (0-based). Section and Lesson have position, returned ordered.
+
+Q4: "Nếu delete course thì lesson/section có bị orphan?"
+- Có endpoint DELETE /api/lessons/course/{courseId} để cascade delete content (server side). Ngoài ra Section->Lesson cascade + orphanRemoval.
+
+Q5: "Security: FE có đủ không?"
+- FE chỉ UX; enforcement nằm ở BE: @PreAuthorize + JWT.
+
+8) Personal study checklist (what to memorize tonight)
+- Nhớ các endpoint ở mục 4 (đặc biệt: /api/courses/list vs /public/list; /api/lessons/course/{id}/structure; reorder endpoints).
+- Nhớ data model: Course.createdBy, Section.courseId+position, Lesson.section+position.
+- Nhớ role matrix: USER read, STAFF/MANAGER/ADMIN mutate.
+- Nhớ gateway reason + Redis rate limiter.
+- Nhớ 2 demo scripts (A: manual build; B: playlist import).
+
+9) If you have 60 seconds for a "closing"
+- Nêu limitations: một số màn hình demo/mock data; payment/status confirm cần harden; logging/metrics chưa đầy đủ.
+- Future: RBAC granularity, audit logs, validation, caching, pagination, full CI tests.
+
+
+====================
+10) Deep-dive Question Bank (xoáy sâu) + Answer cues
+====================
+
+10.1 YouTube API import (FE side)
+Q1: "YouTube import hoạt động như nào? Dùng endpoint nào của YouTube Data API v3?"
+- Answer cues:
+   - Key lấy từ env: VITE_YOUTUBE_API_KEY.
+   - 2 call chính:
+      - GET https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&id={playlistId}&key={key}
+      - GET https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId={playlistId}&maxResults=50&pageToken=...&key={key}
+   - Lấy duration: GET https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id={id1,id2,...}&key={key}
+   - Parse ISO8601 duration (PT#H#M#S) -> format hh:mm:ss.
+
+Q2: "Playlist có >50 video thì sao?"
+- Answer cues:
+   - Code dùng nextPageToken, loop do/while để paginate playlistItems cho đến hết.
+
+Q3: "Nếu quota exceeded / API key invalid thì UX trả về gì?"
+- Answer cues:
+   - parseYouTubeError map các reason: keyInvalid, accessNotConfigured, dailyLimitExceeded, quotaExceeded, forbidden...
+   - UI show toast error; ImportStatus chuyển error.
+
+Q4: "Vì sao cần gọi /videos để lấy duration?"
+- Answer cues:
+   - playlistItems không có duration; phải gọi videos contentDetails.
+
+Q5: "Vì sao import tạo course status=draft?"
+- Answer cues:
+   - Giảm rủi ro publish nhầm; cần review thủ công trước khi public.
+
+Q6 (xoáy): "Nếu playlist private/unlisted?"
+- Answer cues:
+   - Private: API không trả items; code trả 'Playlist not found or is private'.
+   - Unlisted: vẫn OK nếu key có quyền và playlist accessible.
+
+Q7 (xoáy): "Tại sao truncate description/title?"
+- Answer cues:
+   - Tránh vượt giới hạn cột DB (MAX_DESCRIPTION_LENGTH=250, MAX_TITLE_LENGTH=255).
+
+
+10.2 Gateway Redis Rate Limiter (BE)
+Q8: "Rate limit config nằm ở đâu? Quy tắc replenishRate/burstCapacity nghĩa là gì?"
+- Answer cues:
+   - In api-gateway application.properties: filter=RequestRateLimiter cho routes courses/lessons/payment.
+   - replenishRate = số token thêm mỗi giây; burstCapacity = số token tối đa trong bucket.
+   - Config hiện tại 1/1 => ~1 req/s per key (khá gắt), burst tối đa 1.
+
+Q9: "Key-resolver dùng cái gì làm key?"
+- Answer cues:
+   - Bean userKeyResolver trong RateLimiterConfig.java.
+   - Lấy header X-User-Id; nếu thiếu -> 'anonymous'.
+
+Q10 (xoáy): "Nếu mọi request không set X-User-Id thì chuyện gì xảy ra?"
+- Answer cues:
+   - Tất cả share cùng key 'anonymous' => rate limit toàn hệ thống cho anonymous, dễ gây nghẽn.
+   - Fix: set X-User-Id tại gateway filter hoặc derive từ JWT subject/IP.
+
+Q11 (xoáy): "Redis đóng vai trò gì trong rate limit?"
+- Answer cues:
+   - Lưu state token-bucket phân tán (multi-instance gateway). Không dùng in-memory.
+
+Q12: "Tại sao rate limit chỉ bật ở một vài route?"
+- Answer cues:
+   - Courses/lessons/payment dễ bị spam (scrape, brute force, payment abuse).
+   - Orders/cart có thể để riêng tùy policy.
+
+
+10.3 CORS (Gateway)
+Q13: "CORS xử lý ở đâu và vì sao set allowedOrigins?"
+- Answer cues:
+   - gateway globalcors in application.properties.
+   - allowedOrigins hiện set http://localhost:3000.
+
+Q14 (xoáy): "FE của mình chạy Vite thường là 5173, vậy có vấn đề gì?"
+- Answer cues:
+   - Có: browser block CORS nếu origin mismatch.
+   - Fix: thêm http://localhost:5173 hoặc dùng allowedOriginPatterns.
+
+
+10.4 Course ownership & authorization
+Q15: "GET /api/courses/list trả về khác nhau giữa admin và teacher như nào?"
+- Answer cues:
+   - In CourseController: admin -> getAllCourses(); else -> getCoursesByOwner(authentication.name).
+   - createdBy set lúc createCourse.
+
+Q16 (xoáy): "Nếu createCourse gọi mà Authentication null thì createdBy là gì?"
+- Answer cues:
+   - owner = authentication.getName() else null.
+   - Nhưng endpoint đã @PreAuthorize, nên bình thường auth phải có; null là edge-case/config issue.
+
+
+10.5 Lesson structure consistency
+Q17: "Reorder update lưu kiểu gì?"
+- Answer cues:
+   - Request body: {fromIndex,toIndex}. Server cập nhật field position (0-based), @OrderBy(position ASC).
+
+Q18 (xoáy): "Vì sao cần position thay vì rely on id?"
+- Answer cues:
+   - id không phản ánh thứ tự; position cho reorder O(1) mapping.
+
+Q19 (xoáy): "Cascade + orphanRemoval nghĩa là gì trong Section->Lesson?"
+- Answer cues:
+   - Xóa section sẽ xóa lesson con; remove lesson khỏi list cũng delete record.
+
+
+10.6 VNPay/payment flow (outside your part nhưng có thể bị hỏi)
+Q20: "Return URL được set ở đâu và vì sao 'enforce'?"
+- Answer cues:
+   - FE paymentService enforces returnUrl = window.location.origin + /payment/vnpay/return.
+   - Tránh client set returnUrl bậy -> redirect attack.
+
+Q21 (xoáy): "Chỉ dựa vào query vnp_ResponseCode có đủ không?"
+- Answer cues:
+   - Không đủ; đúng chuẩn phải verify signature + confirm server-side transaction status.
+   - Project có attempt gọi getPaymentStatus (nhưng cần đảm bảo endpoint/base URL đúng).
+
+
+10.7 Eureka / service discovery
+Q22: "Tại sao route courses-service dùng lb://courses còn lesson-service dùng http://localhost:8083?"
+- Answer cues:
+   - courses-service đăng ký discovery name 'courses', nên gateway dùng load-balancer.
+   - lesson-service đang cấu hình trực tiếp (chưa/không dùng discovery) hoặc setup chưa đồng bộ.
+
+
+10.8 Practical "linh tinh" hỏi vặn
+Q23: "Nếu YouTube import bị chặn do quota, bạn degrade thế nào?"
+- Answer cues:
+   - Show friendly error; allow manual course/lesson creation; add retry/backoff; cache playlist results.
+
+Q24: "Nếu user spam gọi /api/courses/public/list thì rate limit có chặn không?"
+- Answer cues:
+   - Nếu request đi qua gateway route có filter + key resolver; nếu không set X-User-Id -> anonymous throttle.
+
+Q25: "Chỗ nào bạn sẽ đặt logging/metrics để debug?"
+- Answer cues:
+   - gateway logging + correlation id; service logs for createCourse/createLesson/reorder; audit who changed what.
+
+
+====================
+11) Tổng quan kiến thức (REST API structure + SMTP mail + Faker seed)
+====================
+
+11.1 Build REST API (Spring Boot/SB) kiểu “chuẩn bài”
+- Tư duy layer: Controller (HTTP) -> Service (business) -> Repository (DB) -> Entity/Model.
+- Controller:
+   - Dùng @RestController + @RequestMapping, mỗi endpoint map sang method.
+   - Input: @RequestBody (JSON), @RequestParam, @PathVariable, @RequestHeader.
+   - Output: ResponseEntity<T> + HTTP status đúng (200/201/204/400/401/403/404/409/500).
+- DTO:
+   - Request DTO: chỉ chứa field client được phép gửi (ví dụ LoginRequestDTO).
+   - Response DTO: chỉ trả field safe (không trả password/hash).
+   - Mapper: convert Entity <-> DTO (ví dụ UserMapper).
+- Validation:
+   - Dùng @Valid + annotation (NotBlank/Email/Min/Max) ở DTO/entity.
+   - Lỗi validation nên trả 400 kèm message.
+- Error handling:
+   - Có thể gom exception bằng @ControllerAdvice (nếu project có) để trả error format đồng nhất.
+- Transaction:
+   - Service xử lý write thường đặt @Transactional để đảm bảo atomic.
+- Security:
+   - “FE chỉ UX”, enforce ở BE: Spring Security + JWT + @PreAuthorize.
+   - Mỗi API phải nói rõ role matrix: USER read vs STAFF/MANAGER/ADMIN mutate.
+
+11.2 Cấu trúc file REST API trong project này (nói theo “đúng code đang có”)
+- Mỗi microservice thường có các package chính:
+   - controller/: nhận request HTTP (ví dụ user-service có UserController, OrderController)
+   - service/: business logic (UserService, EmailVerificationService)
+   - repository/: Spring Data JPA interfaces
+   - model/: entity + enum (User/Order/OrderItem/VerificationCode)
+   - dto/: request/response objects
+   - config/security/: JWT, filter, CORS, etc (tuỳ service)
+- Gateway route /api/* là entrypoint; sau đó forward tới service tương ứng.
+
+11.3 SMTP mail trong user-service (OTP verify) – phải biết để trả lời
+Q26: "SMTP mail của dự án build kiểu gì?" 
+- Answer cues:
+   - Config trong application.properties dùng spring.mail.* (host/port/auth/starttls).
+   - Service dùng JavaMailSender + SimpleMailMessage để gửi mail.
+   - Flow hiện tại trong EmailVerificationService:
+      1) Generate OTP 6 ký tự từ UUID
+      2) Save OTP vào DB (VerificationCode)
+      3) Send email tới user.getEmail() kèm code
+      4) Verify: find user by email -> find code by (user, code) -> enable account -> delete code.
+
+Q27 (xoáy): "Vì sao không nên hard-code password/mail key trong repo?" 
+- Answer cues:
+   - Lộ credential => bị takeover email/quota.
+   - Best practice: dùng env var/secret manager; local dùng App Password (Gmail) hoặc Mailtrap.
+   - Nên có rate limit/resend limit cho OTP + expire time (TTL) để chống brute-force.
+
+Q28 (xoáy): "OTP lưu DB vậy có vấn đề gì?" 
+- Answer cues:
+   - Nên có expiry (createdAt + ttl), max attempts, và có thể lưu hash OTP thay vì plaintext.
+   - Cleanup codes cũ (cron) để DB không phình.
+
+11.4 Faker seed data (DatabaseSeeder) trong user-service – nói sao cho chuẩn
+Q29: "Seed data dùng gì? chạy khi nào?" 
+- Answer cues:
+   - Có class DatabaseSeeder implements CommandLineRunner + @Component.
+   - Khi app start, Spring gọi run(...) => seeding data demo.
+   - Dùng com.github.javafaker.Faker để generate username/email/orders/order_items.
+   - Có tạo sẵn account demo: admin/manager/staff (password 123456) + user random.
+
+Q30 (xoáy): "Seed như vậy có rủi ro gì?" 
+- Answer cues:
+   - Rủi ro: mỗi lần chạy lại TRUNCATE (đang có cleanUpOldData) => mất dữ liệu thật.
+   - Nên gate bằng profile/property: chỉ chạy ở dev (spring.profiles.active=dev) hoặc flag ENV.
+   - Nếu production: tắt seeder; dùng migration tool (Flyway/Liquibase) thay vì seed tuỳ tiện.

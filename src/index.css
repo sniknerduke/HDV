@@ -2846,7 +2846,14 @@
 html {
   font-size: var(--font-size);
 }
-
+/* The classic single-line truncation */
+.custom-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block; /* Essential! */
+  width: 100%;    /* Or a fixed max-width */
+}
 @property --tw-translate-x {
   syntax: "*";
   inherits: false;
