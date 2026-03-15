@@ -7,9 +7,9 @@ server:
 
 spring:
   datasource:
-    url: "jdbc:mysql://localhost:3306/Servicethongke"
-    username: root
-    password: matkhaumysql
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/Servicethongke}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:matkhaumysql}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
