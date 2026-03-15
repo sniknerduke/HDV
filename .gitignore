@@ -11,3 +11,7 @@ node_modules/
 target/
 .env
 *.env
+build/
+dist/
+.idea/
+*.log

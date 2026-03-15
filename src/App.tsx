@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Home, GraduationCap, Users, Settings, LogOut, Menu, Bell, ShoppingCart as CartIcon, FileText, BarChart, Award, User as UserIcon } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { BookOpen, Home, GraduationCap, Users, LogOut, Menu, Bell, ShoppingCart as CartIcon, FileText, User as UserIcon } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from './components/ui/dropdown-menu';
 import { Popover, PopoverTrigger, PopoverContent } from './components/ui/popover';
@@ -21,26 +22,90 @@ import StudentProfile from './components/student/StudentProfile';
 import ShoppingCart from './components/student/ShoppingCart';
 import Checkout from './components/student/Checkout';
 import PaymentReturn from './components/student/PaymentReturn';
-// Removed assignments feature
-// import Assignments from './components/student/Assignments';
 import TransactionHistory from './components/student/TransactionHistory';
 import TeacherDashboard from './components/teacher/TeacherDashboard';
 import ManageCourses from './components/teacher/ManageCourses';
 import TeacherCourseContentManager from './components/teacher/TeacherCourseContentManager';
-// Removed: TeacherSchedule, GradeAssignments, StudentList
 import TeacherProfile from './components/teacher/TeacherProfile';
 import AdminDashboard from './components/admin/AdminDashboard';
 import UserManagement from './components/admin/UserManagement';
 import CourseManagement from './components/admin/CourseManagement';
 import OrderManagement from './components/admin/OrderManagement';
 
+// ---- Mapping between old page-keys and URL paths ----
+const pageToPath: Record<string, string> = {
+  // public
+  'home': '/',
+  'courses': '/courses',
+  'course-detail': '/course',
+  'about': '/about',
+  'contact': '/contact',
+  'login': '/login',
+  'register': '/register',
+  'verify-account': '/verify-account',
+  'forgot-password': '/forgot-password',
+  // student
+  'student-dashboard': '/student',
+  'my-courses': '/student/my-courses',
+  'course-content': '/student/course-content',
+  'student-profile': '/student/profile',
+  'shopping-cart': '/cart',
+  'checkout': '/checkout',
+  'payment-return': '/payment/return',
+  'transaction-history': '/student/transactions',
+  // teacher
+  'teacher-dashboard': '/teacher',
+  'manage-courses': '/teacher/manage-courses',
+  'teacher-course-content': '/teacher/course-content',
+  'teacher-profile': '/teacher/profile',
+  // admin
+  'admin-dashboard': '/admin',
+  'user-management': '/admin/users',
+  'admin-courses': '/admin/courses',
+  'admin-orders': '/admin/orders',
+  'admin-course-content': '/admin/course-content',
+};
+
+// Helper: derive current page-key from pathname
+const pathToPage = (path: string): string => {
+  const normalized = path.replace(/\/$/, '') || '/';
+  const entries = Object.entries(pageToPath);
+  for (const [page, p] of entries) {
+    if (p === normalized || (p !== '/' && normalized.startsWith(p))) return page;
+  }
+  return 'home';
+};
+
+// ---- Route guard component ----
+function RequireAuth({ user, children }: { user: string | null; children: React.ReactNode }) {
+  if (!user) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+function RequireRole({ user, role, children }: { user: string | null; role: string; children: React.ReactNode }) {
+  if (user !== role) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<string | null>(null); // null, 'student', 'teacher', 'admin'
-  const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Derive current page-key from the URL for sidebar highlighting
+  const currentPage = pathToPage(location.pathname);
   const showSidebar = user && !['home', 'courses', 'course-detail', 'about', 'contact'].includes(currentPage);
+
+  // ---- Bridge function: translates old page-key calls to router navigations ----
+  // Child components call onNavigate('shopping-cart') → this converts to navigate('/cart')
+  const onNavigate = useCallback(
+    (page: string, state?: any) => {
+      const path = pageToPath[page] ?? '/';
+      navigate(path, { state });
+    },
+    [navigate],
+  );
 
   const mapApiRoleToClient = (role?: string | null) => {
     switch (role) {
@@ -55,59 +120,7 @@ export default function App() {
     }
   };
 
-  // Simple path <-> page mapping to enable real URLs (e.g., /admin)
-  const pageToPath = useMemo(() => ({
-    // public
-    'home': '/',
-    'courses': '/courses',
-    'course-detail': '/course',
-    'about': '/about',
-    'contact': '/contact',
-    'login': '/login',
-    'register': '/register',
-    'verify-account': '/verify-account',
-    'forgot-password': '/forgot-password',
-    // student
-    'student-dashboard': '/student',
-    'my-courses': '/student/my-courses',
-    'course-content': '/student/course-content',
-    'student-profile': '/student/profile',
-    'shopping-cart': '/cart',
-    'checkout': '/checkout',
-    'payment-return': '/payment/return',
-    'transaction-history': '/student/transactions',
-    // teacher
-    'teacher-dashboard': '/teacher',
-    'manage-courses': '/teacher/manage-courses',
-    'teacher-course-content': '/teacher/course-content',
-    // removed routes for schedule, grading, student list
-    'teacher-profile': '/teacher/profile',
-    // admin
-    'admin-dashboard': '/admin',
-    'user-management': '/admin/users',
-    'admin-courses': '/admin/courses',
-    'admin-orders': '/admin/orders', // Thêm dòng này
-    'admin-course-content': '/admin/course-content',
-  } as Record<string, string>), []);
-
-  const pathToPage = (path: string): string => {
-    const normalized = path.replace(/\/$/, '');
-    const entries = Object.entries(pageToPath);
-    for (const [page, p] of entries) {
-      if (p === normalized || (p !== '/' && normalized.startsWith(p))) return page;
-    }
-    return 'home';
-  };
-
-  const navigateTo = (page: string) => {
-    const path = pageToPath[page] ?? '/';
-    if (window.location.pathname !== path) {
-      window.history.pushState({}, '', path);
-    }
-    setCurrentPage(page);
-  };
-
-  // Simple in-memory notifications; could be loaded from API/localStorage later
+  // Simple in-memory notifications
   const [notifications, setNotifications] = useState<Array<{
     id: number;
     title: string;
@@ -126,7 +139,7 @@ export default function App() {
   const handleLogin = (role: string) => {
     setUser(role);
     sessionStorage.removeItem('pending_email');
-    navigateTo('home');
+    navigate('/');
   };
 
   const handleLogout = () => {
@@ -134,36 +147,18 @@ export default function App() {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
     sessionStorage.removeItem('pending_email');
-    navigateTo('home');
+    navigate('/');
   };
 
-  // Redirect guard: if user becomes null while on protected page, force home (except admin path which shows admin login)
-  if (!user && /^(student|teacher)-/.test(currentPage)) {
-    // simple synchronous guard; in real app use useEffect + router
-    navigateTo('home');
-  }
-
-  // Sync current page with URL on first load and back/forward
-  useEffect(() => {
-    const initial = pathToPage(window.location.pathname);
-    setCurrentPage(initial);
-    const onPopState = () => setCurrentPage(pathToPage(window.location.pathname));
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // Restore session on mount
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     const storedUser = localStorage.getItem('auth_user');
-
-    // If missing token or user info, clear any stale auth and stay logged out
     if (!token || !storedUser) {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
       return;
     }
-
     try {
       const parsed = JSON.parse(storedUser) as { role?: string | null };
       const mapped = mapApiRoleToClient(parsed.role);
@@ -177,18 +172,19 @@ export default function App() {
     }
   }, []);
 
-  const handleCourseSelect = (course: any) => {
-    setSelectedCourse(course);
-    setCurrentPage('course-detail');
-  };
+  // ---- Course selection helpers (uses location.state) ----
+  const handleCourseSelect = useCallback(
+    (course: any) => {
+      navigate('/course', { state: { course } });
+    },
+    [navigate],
+  );
 
   const handleAddToCart = (course: any) => {
     try {
       const raw = localStorage.getItem('cart');
       const arr = raw ? JSON.parse(raw) : [];
-      // de-duplicate by id if exists
       if (!arr.find((c: any) => c.id === course.id)) {
-        // Normalize price: accept number or string like '500,000đ'
         const numericPrice = typeof course.price === 'number'
           ? course.price
           : (typeof course.price === 'string'
@@ -196,21 +192,22 @@ export default function App() {
               : 0);
         arr.push({
           id: course.id,
-            title: course.title,
-            price: numericPrice,
-            instructor: course.instructor,
-            image: course.image
+          title: course.title,
+          price: numericPrice,
+          instructor: course.instructor,
+          image: course.image,
         });
         localStorage.setItem('cart', JSON.stringify(arr));
         toast.success('Đã thêm vào giỏ hàng');
       } else {
         toast.message('Khóa học đã có trong giỏ');
       }
-    } catch (e) {
+    } catch (_e) {
       toast.error('Không thể thêm vào giỏ hàng');
     }
   };
 
+  // ---- Navigation rendering ----
   const renderNavigation = () => {
     if (!user) {
       return (
@@ -222,24 +219,24 @@ export default function App() {
                 <span className="font-bold text-xl">EduSmart</span>
               </div>
               <div className="hidden md:flex gap-6">
-                <button onClick={() => navigateTo('home')} className="hover:text-blue-600">
+                <button onClick={() => navigate('/')} className="hover:text-blue-600">
                   Trang chủ
                 </button>
-                <button onClick={() => navigateTo('courses')} className="hover:text-blue-600">
+                <button onClick={() => navigate('/courses')} className="hover:text-blue-600">
                   Khóa học
                 </button>
-                <button onClick={() => navigateTo('about')} className="hover:text-blue-600">
+                <button onClick={() => navigate('/about')} className="hover:text-blue-600">
                   Giới thiệu
                 </button>
-                <button onClick={() => navigateTo('contact')} className="hover:text-blue-600">
+                <button onClick={() => navigate('/contact')} className="hover:text-blue-600">
                   Liên hệ
                 </button>
               </div>
               <div className="flex gap-2">
-                <Button variant="ghost" onClick={() => navigateTo('login')}>
+                <Button variant="ghost" onClick={() => navigate('/login')}>
                   Đăng nhập
                 </Button>
-                <Button onClick={() => navigateTo('register')}>Đăng ký</Button>
+                <Button onClick={() => navigate('/register')}>Đăng ký</Button>
               </div>
             </div>
           </div>
@@ -262,10 +259,10 @@ export default function App() {
             </div>
             {/* Centered quick nav (logged-in) */}
             <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-6">
-              <button onClick={() => navigateTo('home')} className={`hover:text-blue-600 ${currentPage==='home'?'text-blue-600':''}`}>Trang chủ</button>
-              <button onClick={() => navigateTo('courses')} className={`hover:text-blue-600 ${currentPage==='courses'?'text-blue-600':''}`}>Khóa học</button>
-              <button onClick={() => navigateTo('about')} className={`hover:text-blue-600 ${currentPage==='about'?'text-blue-600':''}`}>Giới thiệu</button>
-              <button onClick={() => navigateTo('contact')} className={`hover:text-blue-600 ${currentPage==='contact'?'text-blue-600':''}`}>Liên hệ</button>
+              <button onClick={() => navigate('/')} className={`hover:text-blue-600 ${currentPage==='home'?'text-blue-600':''}`}>Trang chủ</button>
+              <button onClick={() => navigate('/courses')} className={`hover:text-blue-600 ${currentPage==='courses'?'text-blue-600':''}`}>Khóa học</button>
+              <button onClick={() => navigate('/about')} className={`hover:text-blue-600 ${currentPage==='about'?'text-blue-600':''}`}>Giới thiệu</button>
+              <button onClick={() => navigate('/contact')} className={`hover:text-blue-600 ${currentPage==='contact'?'text-blue-600':''}`}>Liên hệ</button>
             </div>
             <div className="flex items-center gap-4">
               {/* Notifications popover */}
@@ -319,7 +316,7 @@ export default function App() {
               </Popover>
               {/* Cart shortcut for students */}
               {user === 'student' && (
-                <button onClick={() => navigateTo('shopping-cart')} title="Giỏ hàng" className="relative">
+                <button onClick={() => navigate('/cart')} title="Giỏ hàng" className="relative">
                   <CartIcon className="w-5 h-5 text-gray-700" />
                 </button>
               )}
@@ -335,22 +332,19 @@ export default function App() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  {/* <div className="px-2 py-2 text-xs text-gray-500">
-                    Đang đăng nhập: <span className="font-semibold text-gray-700">{user}</span>
-                  </div> */}
                   <DropdownMenuSeparator />
                   {user === 'student' && (
-                    <DropdownMenuItem onClick={() => setCurrentPage('student-profile')} className="cursor-pointer gap-2">
+                    <DropdownMenuItem onClick={() => navigate('/student/profile')} className="cursor-pointer gap-2">
                       <UserIcon className="w-4 h-4" /> Hồ sơ của tôi
                     </DropdownMenuItem>
                   )}
                   {user === 'teacher' && (
-                    <DropdownMenuItem onClick={() => setCurrentPage('teacher-profile')} className="cursor-pointer gap-2">
+                    <DropdownMenuItem onClick={() => navigate('/teacher/profile')} className="cursor-pointer gap-2">
                       <UserIcon className="w-4 h-4" /> Hồ sơ giáo viên
                     </DropdownMenuItem>
                   )}
                   {user === 'admin' && (
-                    <DropdownMenuItem onClick={() => navigateTo('admin-dashboard')} className="cursor-pointer gap-2">
+                    <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer gap-2">
                       <UserIcon className="w-4 h-4" /> Trang quản trị
                     </DropdownMenuItem>
                   )}
@@ -369,29 +363,28 @@ export default function App() {
   const renderSidebar = () => {
     if (!user) return null;
 
-    let menuItems: Array<{ icon: any; label: string; page: string }> = [];
-    
+    let menuItems: Array<{ icon: any; label: string; path: string; page: string }> = [];
+
     if (user === 'student') {
       menuItems = [
-        { icon: Home, label: 'Dashboard', page: 'student-dashboard' },
-        { icon: BookOpen, label: 'Khóa học của tôi', page: 'my-courses' },
-        { icon: Users, label: 'Hồ sơ', page: 'student-profile' },
-        { icon: CartIcon, label: 'Giỏ hàng', page: 'shopping-cart' },
-        { icon: FileText, label: 'Giao dịch', page: 'transaction-history' },
+        { icon: Home, label: 'Dashboard', path: '/student', page: 'student-dashboard' },
+        { icon: BookOpen, label: 'Khóa học của tôi', path: '/student/my-courses', page: 'my-courses' },
+        { icon: Users, label: 'Hồ sơ', path: '/student/profile', page: 'student-profile' },
+        { icon: CartIcon, label: 'Giỏ hàng', path: '/cart', page: 'shopping-cart' },
+        { icon: FileText, label: 'Giao dịch', path: '/student/transactions', page: 'transaction-history' },
       ];
     } else if (user === 'teacher') {
       menuItems = [
-        { icon: Home, label: 'Dashboard', page: 'teacher-dashboard' },
-        { icon: BookOpen, label: 'Quản lý khóa học', page: 'manage-courses' },
-        { icon: Users, label: 'Hồ sơ', page: 'teacher-profile' },
+        { icon: Home, label: 'Dashboard', path: '/teacher', page: 'teacher-dashboard' },
+        { icon: BookOpen, label: 'Quản lý khóa học', path: '/teacher/manage-courses', page: 'manage-courses' },
+        { icon: Users, label: 'Hồ sơ', path: '/teacher/profile', page: 'teacher-profile' },
       ];
     } else if (user === 'admin') {
       menuItems = [
-        { icon: Home, label: 'Dashboard', page: 'admin-dashboard' },
-        // Analytics merged into dashboard; removed separate page
-        { icon: Users, label: 'Quản lý người dùng', page: 'user-management' },
-        { icon: BookOpen, label: 'Quản lý khóa học', page: 'admin-courses' },
-        { icon: FileText, label: 'Quản lý đơn hàng', page: 'admin-orders' }, // Thêm dòng này
+        { icon: Home, label: 'Dashboard', path: '/admin', page: 'admin-dashboard' },
+        { icon: Users, label: 'Quản lý người dùng', path: '/admin/users', page: 'user-management' },
+        { icon: BookOpen, label: 'Quản lý khóa học', path: '/admin/courses', page: 'admin-courses' },
+        { icon: FileText, label: 'Quản lý đơn hàng', path: '/admin/orders', page: 'admin-orders' },
       ];
     }
 
@@ -402,7 +395,7 @@ export default function App() {
             <button
               key={item.page}
               onClick={() => {
-                navigateTo(item.page);
+                navigate(item.path);
                 setSidebarOpen(false);
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 hover:bg-gray-100 ${
@@ -425,67 +418,46 @@ export default function App() {
     );
   };
 
-  const renderContent = () => {
-    if (currentPage === 'login') return <Login onLogin={handleLogin} onNavigate={navigateTo} />;
-    if (currentPage === 'register') return <Register onNavigate={navigateTo} onRegisterSuccess={(_email) => navigateTo('verify-account')} />;
-    if (currentPage === 'verify-account') return <VerifyAccount onNavigate={navigateTo} />;
-    if (currentPage === 'forgot-password') return <ForgotPassword onNavigate={navigateTo} />;
-    if (currentPage === 'home') return <GuestHome onNavigate={navigateTo} onCourseSelect={handleCourseSelect} />;
-    if (currentPage === 'courses') return (
-      <CourseCatalog
-        onCourseSelect={handleCourseSelect}
-        userRole={user === 'student' || user === 'teacher' || user === 'admin' ? user : null}
-        onAddToCart={handleAddToCart}
-        onRequestLogin={() => navigateTo('login')}
-      />
-    );
-    if (currentPage === 'course-detail') return (
+  // ---- Wrapper pages that read location.state ----
+  const CourseDetailPage = () => {
+    const course = (location.state as any)?.course ?? null;
+    return (
       <CourseDetail
-        course={selectedCourse}
-        onNavigate={navigateTo}
+        course={course}
+        onNavigate={onNavigate}
         userRole={user === 'student' || user === 'teacher' || user === 'admin' ? user : null}
         onAddToCart={handleAddToCart}
-        onRequestLogin={() => navigateTo('login')}
+        onRequestLogin={() => navigate('/login')}
       />
     );
-  if (currentPage === 'about') return <About />;
-  if (currentPage === 'contact') return <Contact />;
-    
-    if (currentPage === 'student-dashboard') return <StudentDashboard onNavigate={navigateTo} />;
-    if (currentPage === 'my-courses') return <MyCourses onCourseSelect={(course: any) => { setSelectedCourse(course); navigateTo('course-content'); }} />;
-    if (currentPage === 'course-content') return <CourseContent course={selectedCourse} />;
-    if (currentPage === 'student-profile') return <StudentProfile />;
-    if (currentPage === 'shopping-cart') return <ShoppingCart onNavigate={navigateTo} />;
-    if (currentPage === 'checkout') return <Checkout onNavigate={navigateTo} />;
-    if (currentPage === 'payment-return') return <PaymentReturn onNavigate={navigateTo} />;
-    if (currentPage === 'transaction-history') return <TransactionHistory onNavigate={navigateTo} />;
-    
-    if (currentPage === 'teacher-dashboard') return <TeacherDashboard onNavigate={navigateTo} token={localStorage.getItem('auth_token')} />;
-    if (currentPage === 'manage-courses') return (
-      <ManageCourses onOpenCourse={(course: any) => { setSelectedCourse(course); localStorage.setItem('last_course_id', String(course.id)); navigateTo('teacher-course-content'); }} />
-    );
-    if (currentPage === 'teacher-course-content') return (
-      <TeacherCourseContentManager course={selectedCourse} onNavigate={navigateTo} />
-    );
-  // removed teacher-schedule, grade-assignments, student-list pages
-    if (currentPage === 'teacher-profile') return <TeacherProfile />;
-    
-  if (currentPage === 'admin-dashboard') {
+  };
+
+  const CourseContentPage = () => {
+    const course = (location.state as any)?.course ?? null;
+    return <CourseContent course={course} />;
+  };
+
+  const TeacherCourseContentPage = () => {
+    const course = (location.state as any)?.course ?? null;
+    return <TeacherCourseContentManager course={course} onNavigate={onNavigate} />;
+  };
+
+  const AdminCourseContentPage = () => {
+    const course = (location.state as any)?.course ?? null;
+    return <TeacherCourseContentManager course={course} onNavigate={onNavigate} backPage="admin-courses" />;
+  };
+
+  const AdminDashboardPage = () => {
     if (user !== 'admin') {
-      // Show admin-only login when visiting /admin without admin session
-      return <Login adminOnly onLogin={(role: string) => { setUser(role); navigateTo('admin-dashboard'); }} onNavigate={navigateTo} />;
+      return (
+        <Login
+          adminOnly
+          onLogin={(role: string) => { setUser(role); navigate('/admin'); }}
+          onNavigate={onNavigate}
+        />
+      );
     }
-    return <AdminDashboard onNavigate={navigateTo} />;
-  }
-  if (currentPage === 'user-management') return <UserManagement />;
-  if (currentPage === 'admin-courses') return <CourseManagement onOpenCourse={(course: any) => { setSelectedCourse(course); localStorage.setItem('last_course_id', String(course.id)); navigateTo('admin-course-content'); }} />;
-  if (currentPage === 'admin-orders') return <OrderManagement />;
-  if (currentPage === 'admin-course-content') return (
-    <TeacherCourseContentManager course={selectedCourse} onNavigate={navigateTo} backPage="admin-courses" />
-  );
-  // removed admin-settings page
-    
-    return <GuestHome onNavigate={setCurrentPage} onCourseSelect={handleCourseSelect} />;
+    return <AdminDashboard onNavigate={onNavigate} />;
   };
 
   return (
@@ -494,7 +466,107 @@ export default function App() {
       <div className="flex">
         {showSidebar ? renderSidebar() : null}
         <div className="flex-1">
-          {renderContent()}
+          <Routes>
+            {/* ---- Public routes ---- */}
+            <Route path="/" element={<GuestHome onNavigate={onNavigate} onCourseSelect={handleCourseSelect} />} />
+            <Route
+              path="/courses"
+              element={
+                <CourseCatalog
+                  onCourseSelect={handleCourseSelect}
+                  userRole={user === 'student' || user === 'teacher' || user === 'admin' ? user : null}
+                  onAddToCart={handleAddToCart}
+                  onRequestLogin={() => navigate('/login')}
+                />
+              }
+            />
+            <Route path="/course" element={<CourseDetailPage />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+
+            {/* ---- Auth routes ---- */}
+            <Route path="/login" element={<Login onLogin={handleLogin} onNavigate={onNavigate} />} />
+            <Route
+              path="/register"
+              element={<Register onNavigate={onNavigate} onRegisterSuccess={(_email) => navigate('/verify-account')} />}
+            />
+            <Route path="/verify-account" element={<VerifyAccount onNavigate={onNavigate} />} />
+            <Route path="/forgot-password" element={<ForgotPassword onNavigate={onNavigate} />} />
+
+            {/* ---- Student routes ---- */}
+            <Route path="/student" element={<RequireAuth user={user}><StudentDashboard onNavigate={onNavigate} /></RequireAuth>} />
+            <Route
+              path="/student/my-courses"
+              element={
+                <RequireAuth user={user}>
+                  <MyCourses
+                    onCourseSelect={(course: any) => {
+                      navigate('/student/course-content', { state: { course } });
+                    }}
+                  />
+                </RequireAuth>
+              }
+            />
+            <Route path="/student/course-content" element={<RequireAuth user={user}><CourseContentPage /></RequireAuth>} />
+            <Route path="/student/profile" element={<RequireAuth user={user}><StudentProfile /></RequireAuth>} />
+            <Route path="/cart" element={<RequireAuth user={user}><ShoppingCart onNavigate={onNavigate} /></RequireAuth>} />
+            <Route path="/checkout" element={<RequireAuth user={user}><Checkout onNavigate={onNavigate} /></RequireAuth>} />
+            <Route path="/payment/return" element={<RequireAuth user={user}><PaymentReturn onNavigate={onNavigate} /></RequireAuth>} />
+            <Route path="/student/transactions" element={<RequireAuth user={user}><TransactionHistory onNavigate={onNavigate} /></RequireAuth>} />
+
+            {/* ---- Teacher routes ---- */}
+            <Route
+              path="/teacher"
+              element={
+                <RequireRole user={user} role="teacher">
+                  <TeacherDashboard onNavigate={onNavigate} token={localStorage.getItem('auth_token')} />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/teacher/manage-courses"
+              element={
+                <RequireRole user={user} role="teacher">
+                  <ManageCourses
+                    onOpenCourse={(course: any) => {
+                      localStorage.setItem('last_course_id', String(course.id));
+                      navigate('/teacher/course-content', { state: { course } });
+                    }}
+                  />
+                </RequireRole>
+              }
+            />
+            <Route
+              path="/teacher/course-content"
+              element={<RequireRole user={user} role="teacher"><TeacherCourseContentPage /></RequireRole>}
+            />
+            <Route path="/teacher/profile" element={<RequireRole user={user} role="teacher"><TeacherProfile /></RequireRole>} />
+
+            {/* ---- Admin routes ---- */}
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/users" element={<RequireRole user={user} role="admin"><UserManagement /></RequireRole>} />
+            <Route
+              path="/admin/courses"
+              element={
+                <RequireRole user={user} role="admin">
+                  <CourseManagement
+                    onOpenCourse={(course: any) => {
+                      localStorage.setItem('last_course_id', String(course.id));
+                      navigate('/admin/course-content', { state: { course } });
+                    }}
+                  />
+                </RequireRole>
+              }
+            />
+            <Route path="/admin/orders" element={<RequireRole user={user} role="admin"><OrderManagement /></RequireRole>} />
+            <Route
+              path="/admin/course-content"
+              element={<RequireRole user={user} role="admin"><AdminCourseContentPage /></RequireRole>}
+            />
+
+            {/* ---- Catch-all: redirect to home ---- */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
       </div>
       <Toaster />
