@@ -5,6 +5,8 @@ import { Button } from './components/ui/button';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from './components/ui/dropdown-menu';
 import { Popover, PopoverTrigger, PopoverContent } from './components/ui/popover';
 import { Toaster } from './components/ui/sonner';
+import AIChatbot from './components/ui/AIChatbot';
+import './styles/chatbot.css';
 import GuestHome from './components/guest/GuestHome';
 import CourseCatalog from './components/guest/CourseCatalog';
 import { toast } from 'sonner';
@@ -570,6 +572,7 @@ export default function App() {
         </div>
       </div>
       <Toaster />
+      <AIChatbot />
     </div>
   );
 }
