@@ -62,6 +62,19 @@ services:
 
   # ── API Gateway ─────────────────────────────────────────────
 
+  chatbot-proxy:
+    build:
+      context: ./backend/chatbot-proxy
+      dockerfile: Dockerfile
+    container_name: edu-chatbot-proxy
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+    env_file:
+      - ./backend/chatbot-proxy/.env
+
   api-gateway:
     build:
       context: ./backend/onlineCourses/api-gateway

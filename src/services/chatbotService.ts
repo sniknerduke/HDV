@@ -16,28 +16,13 @@ const SYSTEM_PROMPT =
 
 // ---- Gemini ----
 async function callGemini(messages: ChatMessage[]): Promise<string> {
-  const key = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!key) throw new Error('NO_GEMINI_KEY');
+  const PROXY_URL = import.meta.env.VITE_AI_PROXY_URL || 'http://localhost:4000';
 
-  // Build Gemini contents array (system instruction is separate)
-  const contents = messages
-    .filter((m) => m.role !== 'system')
-    .map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    }));
-
-  const res = await fetch(
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${key}`,
-  {
+  const res = await fetch(`${PROXY_URL}/api/chat/gemini`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-      contents,
-    }),
-  }
-);
+    body: JSON.stringify({ messages }),
+  });
 
   if (!res.ok) {
     const errBody = await res.text();
@@ -54,22 +39,12 @@ async function callGemini(messages: ChatMessage[]): Promise<string> {
 
 // ---- OpenAI fallback ----
 async function callOpenAI(messages: ChatMessage[]): Promise<string> {
-  const key = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!key) throw new Error('NO_OPENAI_KEY');
+  const PROXY_URL = import.meta.env.VITE_AI_PROXY_URL || 'http://localhost:4000';
 
-  const body = {
-    model: 'gpt-3.5-turbo',
-    messages: [{ role: 'system' as const, content: SYSTEM_PROMPT }, ...messages],
-    max_tokens: 512,
-  };
-
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const res = await fetch(`${PROXY_URL}/api/chat/openai`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages }),
   });
 
   if (!res.ok) {
