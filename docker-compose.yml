@@ -151,7 +151,7 @@ services:
   statistic-service:
     build:
       context: ./backend/onlineCourses/Service_thongke
-      dockerfile: ../../Dockerfile.service
+      dockerfile: ../../Dockerfile.service-java21
     container_name: edu-statistics
     restart: unless-stopped
     ports:
