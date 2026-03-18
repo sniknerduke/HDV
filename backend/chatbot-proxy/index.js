@@ -28,7 +28,7 @@ app.post('/api/chat/gemini', async (req, res) => {
       }));
 
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-pro-preview:generateContent?key=${key}`,
       {
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents,
