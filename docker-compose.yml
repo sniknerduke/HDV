@@ -21,7 +21,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: matkhaumysql
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./backend/docker-init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -150,18 +150,17 @@ services:
 
   statistic-service:
     build:
-      context: ./backend/onlineCourses/Service_thongke
-      dockerfile: ../../Dockerfile.service-java21
+      context: ./backend/onlineCourses/statistic-service
+      dockerfile: ../../Dockerfile.service
     container_name: edu-statistics
     restart: unless-stopped
     ports:
       - "8084:8084"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/Servicethongke?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: matkhaumysql
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      USER_SERVICE_URL: http://user-service:8080
     depends_on:
-      mysql:
+      eureka-server:
         condition: service_healthy
 
   # ── Payment Service ─────────────────────────────────────────
