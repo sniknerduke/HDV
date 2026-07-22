@@ -36,6 +36,38 @@ The backend is structured as a collection of microservices:
 
 ### 🖥️ Running the Frontend
 
+### 🔐 Environment Setup (.env)
+
+Before running the frontend, create a `.env` file in the project root and set the values below.
+
+Required (for core app run):
+
+```env
+VITE_GEMINI_API_KEY=your_gemini_api_key
+```
+
+Optional (recommended based on features you use):
+
+```env
+# Backend service base URLs (default is localhost:9090 if not set)
+VITE_COURSE_SERVICE_URL=http://localhost:9090
+VITE_LESSON_SERVICE_URL=http://localhost:9090
+
+# YouTube playlist import feature
+VITE_YOUTUBE_API_KEY=your_youtube_api_key
+
+# Chatbot fallback providers
+VITE_OPENAI_API_KEY=your_openai_api_key
+
+# Local Ollama fallback (no API key needed)
+VITE_OLLAMA_URL=http://localhost:11434
+VITE_OLLAMA_MODEL=gemma3:4b
+```
+
+Notes:
+- If you only want the app to run and use Gemini chatbot, `VITE_GEMINI_API_KEY` is the main variable to set.
+- Do not commit real API keys to git.
+
 Navigate to the root directory and install dependencies:
 ```bash
 npm install
